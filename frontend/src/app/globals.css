@@ -1,0 +1,561 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --brand-lime: #D9EC95;
+  --brand-lime-hover: #C8DE65;
+  --brand-black: #0E0F0C;
+  --brand-ivory: #F2F2F0;
+
+  /* Light mode (Default) — Warm Clean Off-White & Charcoal, exactly matching hero illustration */
+  --bg-app: #FEFAF5;
+  --text-main: #0E0F0C;
+  --text-muted: #57534E;
+  --card-bg: #FFFFFF;
+  --card-border: rgba(14, 15, 12, 0.12);
+  --card-elevated: #F8F5EE;
+  --input-bg: #FAFAF8;
+  --input-border: rgba(14, 15, 12, 0.20);
+  --btn-secondary-bg: #EAEAE4;
+  --btn-secondary-hover: #DFDFD7;
+  --btn-secondary-text: #0E0F0C;
+
+  --heading-accent: #0E0F0C;
+  --code-text: #0E0F0C;
+  --code-bg: #EAEAE4;
+
+  --color-success: #15803D;
+  --color-warning: #B45309;
+  --color-danger: #DC2626;
+}
+
+/* Dark mode (active when html has .dark) */
+html.dark,
+.dark {
+  color-scheme: dark;
+  --bg-app: #0E0F0C;
+  --text-main: #F2F2F0;
+  --text-muted: rgba(242, 242, 240, 0.65);
+  --card-bg: #141512;
+  --card-border: rgba(242, 242, 240, 0.12);
+  --card-elevated: #1B1D18;
+  --input-bg: #181916;
+  --input-border: rgba(242, 242, 240, 0.16);
+  --btn-secondary-bg: rgba(242, 242, 240, 0.08);
+  --btn-secondary-hover: rgba(242, 242, 240, 0.16);
+  --btn-secondary-text: #F2F2F0;
+
+  --heading-accent: var(--brand-lime);
+  --code-text: var(--brand-lime);
+  --code-bg: rgba(242, 242, 240, 0.1);
+
+  --color-success: #8ED081;
+  --color-warning: #F4C95D;
+  --color-danger: #FF6B6B;
+}
+
+/* Light mode (explicit override) */
+html.light,
+.light {
+  color-scheme: light;
+  --bg-app: #FEFAF5;
+  --text-main: #0E0F0C;
+  --text-muted: #57534E;
+  --card-bg: #FFFFFF;
+  --card-border: rgba(14, 15, 12, 0.12);
+  --card-elevated: #F8F5EE;
+  --input-bg: #FAFAF8;
+  --input-border: rgba(14, 15, 12, 0.20);
+  --btn-secondary-bg: #EAEAE4;
+  --btn-secondary-hover: #DFDFD7;
+  --btn-secondary-text: #0E0F0C;
+
+  --heading-accent: #0E0F0C;
+  --code-text: #0E0F0C;
+  --code-bg: #EAEAE4;
+
+  --color-success: #15803D;
+  --color-warning: #B45309;
+  --color-danger: #DC2626;
+}
+
+/* Clean Hero Input: completely remove browser outline, inner box, and focus styling */
+.hero-input,
+input.hero-input,
+input[type="text"].hero-input,
+input[type="url"].hero-input,
+.hero-input:focus,
+.hero-input:focus-visible,
+input.hero-input:focus,
+input.hero-input:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================================
+   ACCESSIBILITY: UNIVERSAL FOCUS-VISIBLE INDICATOR
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--brand-lime-hover) !important;
+  outline-offset: 2px !important;
+}
+
+/* Custom input pill handles its own focus state via focus-within */
+input.hero-input:focus-visible,
+#youtube-url-input:focus-visible {
+  outline: none !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+/* Shimmer Animation */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 2.2s infinite linear;
+}
+
+/* Pulse Animation */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.75);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s infinite ease-in-out;
+}
+
+/* KaTeX formula blocks */
+.katex-display {
+  background-color: var(--card-elevated);
+  border: 1px solid var(--card-border);
+  padding: 14px 18px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 14px 0 !important;
+}
+
+/* Markdown typography styling */
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+
+.markdown-content h1 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 8px;
+}
+
+.markdown-content h2 {
+  font-size: 1.25rem;
+  color: var(--heading-accent);
+  border-left: 3px solid var(--heading-accent);
+  padding-left: 8px;
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+}
+
+.markdown-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.markdown-content ul, .markdown-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.35rem;
+}
+
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Print styling for PDF export */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  nav, .no-print {
+    display: none !important;
+  }
+  .print-content {
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}
+
+/* ============================================================
+   PAGE PAPER TURN FLIP EFFECT (FLASHCARDS)
+   ============================================================ */
+.flashcard-paper-scene {
+  perspective: 1400px;
+  width: 100%;
+}
+
+.flashcard-paper-card {
+  position: relative;
+  width: 100%;
+  min-height: 290px;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.flashcard-paper-card.flipped {
+  transform: rotateY(-180deg);
+}
+
+.flashcard-paper-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--card-border);
+  background-color: var(--card-elevated);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.65s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+/* Notebook paper spine binding crease on left edge of front page */
+.flashcard-paper-front::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.16), transparent);
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 18px;
+  pointer-events: none;
+}
+
+/* Notebook paper spine binding crease on right edge of back page */
+.flashcard-paper-back::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.16), transparent);
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+  pointer-events: none;
+}
+
+/* Page curl dog-ear on bottom-right corner */
+.flashcard-paper-front .page-curl {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, transparent 50%, rgba(120, 120, 120, 0.22) 50%, rgba(120, 120, 120, 0.38) 60%);
+  border-top-left-radius: 4px;
+  pointer-events: none;
+}
+
+.flashcard-paper-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard-paper-card:hover .flashcard-paper-face {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+}
+
+/* ============================================================
+   AUDIO WAVEFORM & FLOATING PARTICLE ANIMATIONS
+   ============================================================ */
+@keyframes audioWaveBar {
+  0%, 100% {
+    transform: scaleY(0.22);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-wave-bar {
+  transform-origin: center bottom;
+  animation: audioWaveBar 1.25s ease-in-out infinite;
+}
+
+@keyframes particleFlow1 {
+  0% {
+    transform: translate(-30px, 12px) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(35px, -22px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes particleFlow2 {
+  0% {
+    transform: translate(25px, 10px) scale(0.7);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.85;
+  }
+  75% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-30px, -18px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes particleFlow3 {
+  0% {
+    transform: translate(-12px, 16px) scale(0.4);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(14px, -10px) scale(1);
+  }
+  100% {
+    transform: translate(28px, -26px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-particle-flow-1 {
+  animation: particleFlow1 3.2s ease-in-out infinite;
+}
+
+.animate-particle-flow-2 {
+  animation: particleFlow2 3.8s ease-in-out infinite;
+}
+
+.animate-particle-flow-3 {
+  animation: particleFlow3 4.2s ease-in-out infinite;
+}
+
+/* ============================================================
+   RESPONSIVE MARKDOWN TABLES
+   ============================================================ */
+.markdown-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 0.875rem;
+}
+
+.markdown-content th {
+  background-color: var(--card-elevated);
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-content tr:hover td {
+  background-color: var(--btn-secondary-bg);
+}
+
+/* ============================================================
+   ACCESSIBILITY: RESPECT PREFERS-REDUCED-MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-shimmer::after {
+    display: none !important;
+  }
+
+  .animate-spin {
+    animation: none !important;
+  }
+
+  .animate-pulse,
+  .animate-ping,
+  .animate-pulse-dot {
+    animation: none !important;
+  }
+}
+
+
+
+
+/* The study panel lives inside a scrolling pane, so it does not need the page-level spacing. */
+.workspace-pane #workspace-container {
+  margin: 0 0 1rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Phones: safety rules that keep every page inside the screen.        */
+/* ------------------------------------------------------------------ */
+
+/* A one-column grid sizes itself to its widest child, so one long title pushes a whole list off the screen.
+   Give every grid without explicit columns a column that is allowed to shrink. (Utilities override this.) */
+@layer base {
+  /* Only a plain (not sm:/md:...) grid-cols class counts as "already has columns". */
+  .grid:not([class^="grid-cols-"]):not([class*=" grid-cols-"]):not([class*="grid-rows"]):not([class*="grid-flow"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* If something still sticks out, never let the whole page scroll sideways. `clip` (unlike `hidden`) keeps sticky working. */
+body {
+  overflow-x: clip;
+}
+
+/* No 300ms tap delay or accidental double-tap zoom on controls. */
+button,
+a,
+[role="button"],
+[role="tab"],
+summary,
+label {
+  touch-action: manipulation;
+}
+
+/* iOS zooms the page when a field with text smaller than 16px gets focus. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Easier to hit with a finger. */
+@media (pointer: coarse) {
+  button:not([data-compact]),
+  [role="tab"],
+  select {
+    min-height: 36px;
+  }
+}

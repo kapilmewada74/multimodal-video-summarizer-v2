@@ -1,0 +1,50 @@
+# Local stack: `docker compose up --build`
+#
+# The database is Supabase. Start it first with the Supabase CLI
+# (`supabase start`) or use a hosted Supabase project, then put its connection
+# string in .env as DATABASE_URL. From inside a container the local Supabase
+# database is reached at host.docker.internal:54322.
+x-backend: &backend
+  build: .
+  env_file: .env
+  environment:
+    DATA_DIR: /app/data
+    # The API and the worker run as separate services here.
+    RUN_EMBEDDED_WORKER: "false"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    # Uploads are handed from the API to the worker through this folder when
+    # FILE_STORE=local. With FILE_STORE=supabase they go through Supabase Storage.
+    - data:/app/data
+    - whisper-models:/home/appuser/.cache
+
+services:
+  api:
+    <<: *backend
+    environment:
+      DATA_DIR: /app/data
+      RUN_EMBEDDED_WORKER: "false"
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "summarizer.features.jobs.worker"]
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_API_URL: http://api:8000
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  data:
+  whisper-models:

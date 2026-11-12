@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+venv/
+.venv/
+downloads/
+audio/
+output/
+frontend/node_modules/
+frontend/.next/
+**/.DS_Store
+AUDIT_REPORT.md
+PRODUCT_PLAN.md
+FINAL_IMPLEMENTATION_PLAN.md
