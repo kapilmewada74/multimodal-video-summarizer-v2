@@ -10,6 +10,16 @@ from psycopg_pool import ConnectionPool
 from .config import get_settings
 from .errors import AppError
 
+import os
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default))
+    except ValueError:
+        return default
+
+
 _pool: Optional[ConnectionPool] = None
 _lock = threading.Lock()
 
@@ -25,8 +35,14 @@ def get_pool() -> ConnectionPool:
             _pool = ConnectionPool(
                 url,
                 min_size=1,
-                max_size=10,
-                kwargs={"row_factory": dict_row, "autocommit": True},
+                max_size=_int_env("DB_POOL_MAX", 10),
+                # Several workers/API instances share the database: wait a bounded time, then fail fast.
+                timeout=_int_env("DB_POOL_TIMEOUT", 30),
+                max_idle=300,
+                max_lifetime=1800,
+                # prepare_threshold=None also works behind Supabase's transaction-mode pooler (port 6543).
+                kwargs={"row_factory": dict_row, "autocommit": True, "prepare_threshold": None,
+                        "options": f"-c statement_timeout={_int_env('DB_STATEMENT_TIMEOUT_MS', 30000)}"},
                 open=True,
             )
         return _pool

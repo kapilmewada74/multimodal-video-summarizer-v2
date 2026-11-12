@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "../lib/analytics";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -220,6 +221,7 @@ export default function Home() {
       }
       const data = await res.json();
       setUsageRefresh((n) => n + 1);
+      track("summary_submitted", { source: "youtube" });
 
       showToast(force ? "Regenerating summary..." : "Pipeline initiated!", "info");
       startPolling(data.job_id);

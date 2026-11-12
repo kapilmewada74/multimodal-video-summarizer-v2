@@ -1,5 +1,6 @@
 """FastAPI application entry point: `uvicorn summarizer.main:app`."""
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,9 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import get_settings
 from .core.db import close_pool
 from .core.errors import install_error_handlers
+from .core.observability import configure_logging, init_error_reporting, install_request_middleware
+from .core.startup_checks import enforce
 from .features.documents.router import router as documents_router
 from .features.exports.router import router as exports_router
 from .features.limits.router import router as limits_router
+from .features.ops.router import router as ops_router
+from .features.account.router import router as account_router
 from .features.notes.router import router as notes_router
 from .features.edits.router import router as edits_router
 from .features.notifications.router import router as notifications_router
@@ -24,10 +29,8 @@ from .features.uploads.router import router as uploads_router
 from .features.videos.library import router as library_router
 from .features.videos.router import router as videos_router
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-# httpx logs full request URLs; keep it quiet so nothing sensitive reaches logs.
-for _noisy in ("httpx", "httpcore"):
-    logging.getLogger(_noisy).setLevel(logging.WARNING)
+configure_logging()
+init_error_reporting()
 
 logger = logging.getLogger("summarizer")
 
@@ -35,6 +38,7 @@ logger = logging.getLogger("summarizer")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    enforce(settings, logger)  # production only: refuses to start on an unsafe configuration
     worker = None
     if settings.run_embedded_worker and settings.database_url:
         from .features.jobs.worker import start_background_worker
@@ -46,6 +50,18 @@ async def lifespan(app: FastAPI):
     if worker:
         worker[1].set()
     close_pool()
+
+
+def _database_status(settings) -> str:
+    if not settings.database_url:
+        return "not_configured"
+    try:
+        from .core.db import connection
+        with connection() as conn:
+            conn.execute("select 1")
+        return "ok"
+    except Exception:
+        return "unreachable"
 
 
 def create_app() -> FastAPI:
@@ -64,15 +80,30 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
     install_error_handlers(app)
+    install_request_middleware(app, settings.is_production)
 
     for router in (videos_router, library_router, outputs_router, sharing_router, exports_router,
                    public_router, limits_router, slides_router, study_router, notes_router, edits_router,
-                   playlists_router, notifications_router, documents_router, uploads_router):
+                   playlists_router, notifications_router, documents_router, uploads_router,
+                   ops_router, account_router):
         app.include_router(router)
 
     @app.get("/")
     def index():
         return {"message": "Multimodal Video Summarizer API is running. Open the web app on http://localhost:3000."}
+
+    @app.get("/api/health/live")
+    def live():
+        """Is the process up? Never touches the database, so a database outage does not restart the API."""
+        return {"status": "alive"}
+
+    @app.get("/api/health/ready")
+    def ready():
+        """Can this instance serve traffic? 503 when the database is unreachable (a load balancer stops sending it requests)."""
+        from fastapi.responses import JSONResponse
+        status = _database_status(settings)
+        body = {"status": "ready" if status == "ok" else "not_ready", "database": status}
+        return JSONResponse(body, status_code=200 if status == "ok" else 503)
 
     @app.get("/api/health")
     def health():
@@ -83,17 +114,9 @@ def create_app() -> FastAPI:
                 device = "cuda"
         except Exception:
             pass
-        database = "not_configured"
-        if settings.database_url:
-            try:
-                from .core.db import connection
-                with connection() as conn:
-                    conn.execute("select 1")
-                database = "ok"
-            except Exception:
-                database = "unreachable"
+        database = _database_status(settings)
         return {"status": "healthy" if database in ("ok", "not_configured") else "degraded",
-                "device": device, "database": database}
+                "device": device, "database": database, "version": os.getenv("RELEASE", "dev")}
 
     return app
 

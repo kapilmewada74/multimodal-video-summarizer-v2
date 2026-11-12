@@ -44,6 +44,8 @@ try:
     H = {"Authorization": "Bearer " + token(uid)}; HO = {"Authorization": "Bearer " + token(other)}
     with TestClient(app) as c:
         r = c.get("/api/health"); check("health", r.status_code == 200, r.text)
+        r = c.get("/api/health/ready"); check("readiness probe sees the live database", r.status_code == 200 and r.json()["database"] == "ok", r.text)
+        check("every response carries a request id and security headers", bool(r.headers.get("x-request-id")) and r.headers.get("x-content-type-options") == "nosniff")
         check("no token is refused", c.get("/api/videos").status_code in (401, 403))
         guest = jwt.encode({"sub": uid, "aud": "authenticated", "role": "authenticated", "exp": int(time.time())+60, "is_anonymous": True, "iss": f"{URL}/auth/v1"}, SECRET, algorithm="HS256")
         check("a guest (anonymous) session is refused", c.get("/api/videos", headers={"Authorization": "Bearer " + guest}).status_code == 403)
@@ -78,6 +80,15 @@ try:
         check("public share page is readable without login", r is not None and r.status_code == 200, getattr(r, "text", "")[:150])
         r = c.get(f"/api/videos/{vid}/export.md", headers=H); check("export uses my edited summary", r.status_code == 200 and "my edit 2" in r.text)
         r = c.get("/api/me/usage", headers=H); check("usage endpoint (10 videos a day)", r.status_code == 200, r.text[:150])
+        r = c.get("/api/me/export", headers=H); d = r.json() if r.status_code == 200 else {}
+        check("data export holds my data and no storage keys", r.status_code == 200 and d["account"]["id"] == uid and len(d["notes"]) == 1 and "storage_key" not in r.text, r.text[:150])
+        check("account deletion needs the word DELETE", c.request("DELETE", "/api/me", headers=HO, json={"confirm": "no"}).status_code == 400)
+        r = c.request("DELETE", "/api/me", headers=HO, json={"confirm": "DELETE"})
+        gone = admin.execute("select count(*) from auth.users where id=%s", (other,)).fetchone()[0] == 0 and admin.execute("select count(*) from public.profiles where user_id=%s", (other,)).fetchone()[0] == 0
+        check("account deletion removes the user and their rows on the live database", r.status_code == 200 and gone, r.text[:150])
+        check("my own account is untouched by that", admin.execute("select count(*) from auth.users where id=%s", (uid,)).fetchone()[0] == 1)
+    other = str(uuid.uuid4())  # the first one was deleted above; RLS needs a second real user
+    admin.execute("insert into auth.users (id, aud, role, email, is_anonymous) values (%s,'authenticated','authenticated',%s,false)", (other, other + "@smoke.test"))
     # RLS check straight in SQL as the 'authenticated' role: a user sees only their own notes
     with psycopg.connect(DB, autocommit=False) as rls:
         rls.execute("set local role authenticated"); rls.execute("select set_config('request.jwt.claim.sub', %s, true)", (other,))

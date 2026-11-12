@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "../../lib/analytics";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = useCallback(async (next?: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Sign-in is not set up yet.");
+    track("sign_in_started", { method: "google" });
     try {
       await startGoogleSignIn(supabase, callbackUrl(window.location.origin, safeNext(next)));
     } catch (err) {
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithEmail = useCallback(async (email: string, next?: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Sign-in is not set up yet.");
+    track("sign_in_started", { method: "email" });
     try {
       await sendEmailLink(supabase, email, callbackUrl(window.location.origin, safeNext(next)));
     } catch (err) {

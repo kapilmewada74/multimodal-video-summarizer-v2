@@ -8,9 +8,11 @@ or let the API start one in the background (development).
 """
 import logging
 import os
+import signal
 import socket
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 from ...core.config import get_settings
@@ -24,6 +26,23 @@ from .runner import PipelineDeps, UserError, process_job
 logger = logging.getLogger("summarizer.worker")
 
 RETRY_DELAY_SECONDS = 30
+HEARTBEAT_FILE = Path(os.getenv("WORKER_HEARTBEAT_FILE", "/tmp/worker-heartbeat"))
+HEARTBEAT_MAX_AGE = 120  # seconds; a loop turn is at most a job plus the poll delay
+
+
+def beat() -> None:
+    """Touch the heartbeat file; the container health check reads its age."""
+    try:
+        HEARTBEAT_FILE.touch()
+    except OSError:
+        pass
+
+
+def is_healthy(max_age: float = HEARTBEAT_MAX_AGE) -> bool:
+    try:
+        return time.time() - HEARTBEAT_FILE.stat().st_mtime < max_age
+    except OSError:
+        return False
 
 
 def worker_name() -> str:
@@ -88,6 +107,7 @@ def run_forever(stop: Optional[threading.Event] = None, deps: Optional[PipelineD
     last_reminders = 0.0
     logger.info("Worker %s started.", worker_name())
     while not stop.is_set():
+        beat()
         try:
             if time.monotonic() - last_housekeeping > 60:
                 with connection() as conn:
@@ -116,8 +136,22 @@ def start_background_worker() -> tuple[threading.Thread, threading.Event]:
     return thread, stop
 
 
+def main(argv: Optional[list] = None) -> int:
+    import sys
+    args = sys.argv[1:] if argv is None else argv
+    if "--healthcheck" in args:  # used by the container health check
+        return 0 if is_healthy() else 1
+    from ...core.observability import configure_logging, init_error_reporting
+    configure_logging()
+    init_error_reporting()
+    stop = threading.Event()
+    # Docker stops a container with SIGTERM: finish the current job instead of dying in the middle of it.
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, lambda *_: stop.set())
+    beat()
+    run_forever(stop)
+    return 0
+
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    for noisy in ("httpx", "httpcore"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
-    run_forever()
+    raise SystemExit(main())

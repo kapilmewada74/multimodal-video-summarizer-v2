@@ -146,7 +146,7 @@ Make sure you have installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kapilmewada74/multimodal-video-summarizer.git
+git clone https://github.com/RahulDhakad01/multimodal-video-summarizer.git
 ```
 
 Navigate to the project directory:
@@ -196,6 +196,9 @@ docker compose up --build
 
 Starts the API, a separate worker and the web app. The database is your Supabase project.
 
+For a real server (HTTPS, workers, GPU, CI/CD, monitoring, load tests, cost) see the
+[Deployment guide](docs/DEPLOYMENT.md) and the [Operations runbook](docs/RUNBOOK.md).
+
 ### 6. Run the tests
 
 Backend (needs the PostgreSQL server binaries installed; the database tests are skipped without them):
@@ -236,8 +239,10 @@ Speech recognition uses the `small` model by default. Set `WHISPER_MODEL` (for e
 
 Detailed technical documentation and design specifications are available below:
 
-- [**UI Design System & Architecture Specification**](https://github.com/kapilmewada74/multimodal-video-summarizer/blob/main/docs/UI_DESIGN_SYSTEM.md) — Design guidelines, design tokens, component anatomy, interface structure, and product workflows.
-- [**Contributing Guide**](https://github.com/kapilmewada74/multimodal-video-summarizer/blob/main/CONTRIBUTING.md) — Guidelines for contributing to the project.
+- [**UI Design System & Architecture Specification**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/docs/UI_DESIGN_SYSTEM.md) — Design guidelines, design tokens, component anatomy, interface structure, and product workflows.
+- [**Deployment guide**](docs/DEPLOYMENT.md) and [**Operations runbook**](docs/RUNBOOK.md) — cloud architecture, release process, what the owner must set up, security checklist, on-call steps.
+- [**Supabase setup**](docs/SUPABASE_SETUP.md) — database, sign-in and storage.
+- [**Contributing Guide**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/CONTRIBUTING.md) — Guidelines for contributing to the project.
 
 ---
 
@@ -262,7 +267,7 @@ Contributions are welcome!
 
 If you would like to improve this project, fix a bug, optimize the summarization pipeline, introduce new features, or improve the documentation, you are welcome to contribute.
 
-Please read the [**Contributing Guide**](https://github.com/kapilmewada74/multimodal-video-summarizer/blob/main/CONTRIBUTING.md) before submitting changes.
+Please read the [**Contributing Guide**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/CONTRIBUTING.md) before submitting changes.
 
 ### Quick Contribution Workflow
 
@@ -274,7 +279,7 @@ Please read the [**Contributing Guide**](https://github.com/kapilmewada74/multim
 6. Push your branch.
 7. Open a Pull Request.
 
-[**Read the Full Contributing Guide**](https://github.com/kapilmewada74/multimodal-video-summarizer/blob/main/CONTRIBUTING.md)
+[**Read the Full Contributing Guide**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/CONTRIBUTING.md)
 
 ---
 
@@ -283,7 +288,7 @@ Please read the [**Contributing Guide**](https://github.com/kapilmewada74/multim
 **Kapil Mewada**
 
 - GitHub: [@kapilmewada74](https://github.com/kapilmewada74)
-- Project Repository: [Multimodal Video Summarizer](https://github.com/kapilmewada74/multimodal-video-summarizer)
+- Project Repository: [Multimodal Video Summarizer](https://github.com/RahulDhakad01/multimodal-video-summarizer)
 
 **Rahul Dhakad**
 

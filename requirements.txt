@@ -16,12 +16,18 @@ PyJWT[crypto]==2.8.0
 yt-dlp==2026.8.19
 youtube-transcript-api==1.2.5
 faster-whisper==1.2.1
+# faster-whisper does not limit PyAV, and PyAV 19 breaks its audio loading ("unexpected keyword argument
+# metadata_errors"). Keep this pin until faster-whisper supports a newer PyAV.
+av==16.0.1
 indic-transliteration==2.3.82
 
 # AI provider clients
 groq==1.7.0
 httpx==0.28.1
 python-dotenv==1.2.3
+
+# Error reporting (only active when SENTRY_DSN is set)
+sentry-sdk==2.18.0
 
 # Presentation export
 python-pptx==1.0.2

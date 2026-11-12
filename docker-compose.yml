@@ -9,6 +9,9 @@ x-backend: &backend
   env_file: .env
   environment:
     DATA_DIR: /app/data
+    # The image defaults to production settings; locally we want development behaviour.
+    ENVIRONMENT: development
+    LOG_FORMAT: text
     # The API and the worker run as separate services here.
     RUN_EMBEDDED_WORKER: "false"
   extra_hosts:
@@ -24,6 +27,8 @@ services:
     <<: *backend
     environment:
       DATA_DIR: /app/data
+      ENVIRONMENT: development
+      LOG_FORMAT: text
       RUN_EMBEDDED_WORKER: "false"
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
     ports:

@@ -15,7 +15,7 @@ Click the **Fork** button on the GitHub repository to create your own copy.
 Clone your fork to your computer:
 
 ```bash
-git clone https://github.com/kapilmewada74/multimodal-video-summarizer.git
+git clone https://github.com/RahulDhakad01/multimodal-video-summarizer.git
 ```
 
 Move into the project:

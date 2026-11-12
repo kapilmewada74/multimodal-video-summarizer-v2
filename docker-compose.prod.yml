@@ -1,0 +1,71 @@
+# Production stack on one server:  docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+#   caddy  -> HTTPS, routes /api to the API and the rest to the web app
+#   api    -> FastAPI (stateless: run more copies behind the proxy to scale)
+#   worker -> takes jobs from the Supabase queue (add more, or run Dockerfile.gpu workers elsewhere)
+#   web    -> Next.js
+#
+# The database, sign-in and (FILE_STORE=supabase) file storage are hosted by Supabase.
+# Images are built by CI and published to GHCR; set IMAGE_TAG to the commit to deploy.
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+x-backend: &backend
+  image: ${REGISTRY:-ghcr.io/rahuldhakad01/multimodal-video-summarizer}/api:${IMAGE_TAG:-latest}
+  env_file: .env.production
+  restart: unless-stopped
+  logging: *logging
+  stop_grace_period: 120s   # lets a worker finish the video it is processing
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env.production}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [api, web]
+    logging: *logging
+
+  api:
+    <<: *backend
+    environment:
+      RUN_EMBEDDED_WORKER: "false"
+      TRUST_PROXY: "1"
+    deploy:
+      resources: { limits: { cpus: "2", memory: 2G } }
+    expose: ["8000"]
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "summarizer.features.jobs.worker"]
+    environment:
+      RUN_EMBEDDED_WORKER: "false"
+    healthcheck:
+      test: ["CMD", "python", "-m", "summarizer.features.jobs.worker", "--healthcheck"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    volumes:
+      - whisper-models:/home/appuser/.cache
+    deploy:
+      resources: { limits: { cpus: "4", memory: 6G } }
+
+  web:
+    image: ${REGISTRY:-ghcr.io/rahuldhakad01/multimodal-video-summarizer}/web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *logging
+    expose: ["3000"]
+    deploy:
+      resources: { limits: { cpus: "1", memory: 512M } }
+
+volumes:
+  caddy-data:
+  caddy-config:
+  whisper-models:

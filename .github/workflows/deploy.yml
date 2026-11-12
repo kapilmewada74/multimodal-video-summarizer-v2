@@ -1,0 +1,78 @@
+name: Deploy
+
+# Manual: pick the environment and the image tag (a short commit id from the Release run).
+# Runs database migrations first, then updates the server. Needs the secrets listed in docs/DEPLOYMENT.md.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Where to deploy
+        type: choice
+        options: [staging, production]
+        required: true
+      image_tag:
+        description: Image tag (short commit id, e.g. a1b2c3d4e5f6) or "latest"
+        required: true
+        default: latest
+      run_migrations:
+        description: Apply database migrations first
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}   # GitHub environments hold the per-environment secrets (and can require approval)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply database migrations
+        if: inputs.run_migrations
+        uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - if: inputs.run_migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db push --include-all --yes
+
+      - name: Update the server
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_NAME: ${{ secrets.DEPLOY_USER }}
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_deploy "$USER_NAME@$HOST" "mkdir -p /opt/summarizer/deploy"
+          scp -i ~/.ssh/id_deploy docker-compose.prod.yml "$USER_NAME@$HOST:/opt/summarizer/"
+          scp -i ~/.ssh/id_deploy deploy/Caddyfile "$USER_NAME@$HOST:/opt/summarizer/deploy/"
+          ssh -i ~/.ssh/id_deploy "$USER_NAME@$HOST" "cd /opt/summarizer && \
+            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/' .env.production && \
+            docker compose -f docker-compose.prod.yml --env-file .env.production pull && \
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --remove-orphans && \
+            docker image prune -f"
+
+      - name: Check the site is healthy
+        env:
+          URL: ${{ vars.SITE_URL }}
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health/ready" || true)
+            [ "$code" = "200" ] && { echo "healthy"; exit 0; }
+            sleep 10
+          done
+          echo "The site did not become healthy. Roll back by re-running this workflow with the previous image tag."; exit 1

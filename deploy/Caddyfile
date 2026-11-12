@@ -1,0 +1,36 @@
+# Reverse proxy with automatic HTTPS (certificates are issued and renewed by Caddy).
+# {$SITE_ADDRESS} is your domain, e.g. app.example.com (DNS must point at this server).
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# API: straight to the backend (no extra hop through the web server), with room for large uploads.
+	@api path /api/*
+	handle @api {
+		request_body {
+			max_size 520MB
+		}
+		reverse_proxy api:8000 {
+			# Long uploads and long-running streams must not be cut by a short timeout.
+			transport http {
+				read_timeout 15m
+				write_timeout 15m
+			}
+			health_uri /api/health/live
+			health_interval 15s
+			flush_interval -1
+		}
+	}
+
+	# Everything else: the web app.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		-Server
+	}
+	log {
+		output stdout
+		format json
+	}
+}

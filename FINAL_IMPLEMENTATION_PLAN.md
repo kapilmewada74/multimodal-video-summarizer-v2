@@ -403,6 +403,11 @@ Assumes about 3 developers. Total: **about 4.5 months** to a public launch (no p
 - Landing page, onboarding, analytics funnel, public share pages.
 - **Done when:** the app runs on the cloud, a real user can sign in with Google and use all features, and you know the cost per user.
 
+**Phase 5 status (repository side done, owner steps remain; see docs/DEPLOYMENT.md section 3):** production images (API, CPU worker, GPU worker, web),
+HTTPS stack, CI/CD with image publishing and manual deploy + migrations, start-up configuration checks, JSON logs with request ids, Sentry hook, health probes,
+ops stats with alerts, account export and deletion, Privacy/Terms pages, robots/sitemap, analytics hook, Whisper benchmark, queue/HTTP load test, cost model.
+Not yet possible without the owner: real hosting, domain, published Google consent screen, SMTP, measured Whisper/GPU numbers, legal review.
+
 ### Later (after launch, not scheduled)
 - **Code sandbox:** side-by-side player and editor; Sandpack; Judge0/Piston in isolation.
 - **Payment gateway and paid plans:** Razorpay and/or Stripe, plan tiers, higher limits.

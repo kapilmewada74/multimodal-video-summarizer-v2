@@ -307,7 +307,7 @@ def test_download_needs_a_valid_token(api):
     assert api.client.get(base + "?token=garbage").status_code == 403
     good = signing.sign("document-download", doc["id"])
     assert api.client.get(f"{base}?token={good}").status_code == 200
-    assert api.client.get(f"{base}?token={good[:-2]}ab").status_code == 403                      # tampered
+    assert api.client.get(f"{base}?token={good[:-1]}{"0" if good[-1] != "0" else "1"}").status_code == 403                      # tampered
     expired = signing.sign("document-download", doc["id"], ttl_seconds=-5)
     assert api.client.get(f"{base}?token={expired}").status_code == 403                           # expired
     assert api.client.get(f"/api/documents/{other_doc['id']}/file?token={good}").status_code == 403  # token is for one file only

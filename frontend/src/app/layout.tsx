@@ -3,6 +3,7 @@ import { IBM_Plex_Sans } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 import { AuthProvider } from "../features/auth/AuthProvider";
+import { SITE } from "../lib/site";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -11,9 +12,16 @@ const ibmPlexSans = IBM_Plex_Sans({
   display: "swap",
 });
 
+const DESCRIPTION =
+  "AI-powered video summarizer that generates structured study notes, complete transcripts, flashcards, slide presentations, and interactive quizzes.";
+
 export const metadata: Metadata = {
-  title: "SUMMARIZE.AI — Multimodal Video Summarizer",
-  description: "AI-powered video summarizer that generates structured study notes, complete transcripts, flashcards, slide presentations, and interactive quizzes.",
+  metadataBase: new URL(SITE.url),
+  title: { default: "SUMMARIZE.AI — Multimodal Video Summarizer", template: "%s · SUMMARIZE.AI" },
+  description: DESCRIPTION,
+  applicationName: SITE.name,
+  openGraph: { type: "website", siteName: SITE.name, title: "SUMMARIZE.AI — Turn any video into study material", description: DESCRIPTION, url: SITE.url },
+  twitter: { card: "summary", title: "SUMMARIZE.AI", description: DESCRIPTION },
 };
 
 // Fit the screen width, and keep pinch-zoom available (never block it: it is an accessibility feature).
@@ -30,6 +38,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
+        {SITE.analyticsDomain && (
+          <script defer data-domain={SITE.analyticsDomain} src={`${SITE.analyticsHost}/js/script.tagged-events.js`} />
+        )}
         <script
           dangerouslySetInnerHTML={{
             __html: `
