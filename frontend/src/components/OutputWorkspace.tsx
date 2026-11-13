@@ -32,9 +32,20 @@ import {
   Pencil
 } from "lucide-react";
 import { JobResult } from "../lib/types";
-import { FlashcardsView, Flashcard } from "./FlashcardsView";
-import { PresentationView, PresentationData } from "./PresentationView";
-import { QuizView, QuizQuestion } from "./QuizView";
+import dynamic from "next/dynamic";
+import type { Flashcard } from "./FlashcardsView";
+import type { PresentationData } from "./PresentationView";
+import type { QuizQuestion } from "./QuizView";
+
+/** A tab's code is downloaded the first time that tab is opened, not with the page (the animation library alone is ~50 KB). */
+const tabLoading = () => (
+  <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-muted)]">
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Loading…
+  </div>
+);
+const FlashcardsView = dynamic(() => import("./FlashcardsView").then((m) => m.FlashcardsView), { ssr: false, loading: tabLoading });
+const PresentationView = dynamic(() => import("./PresentationView").then((m) => m.PresentationView), { ssr: false, loading: tabLoading });
+const QuizView = dynamic(() => import("./QuizView").then((m) => m.QuizView), { ssr: false, loading: tabLoading });
 import { apiFetch, readError } from "../lib/api";
 
 function cleanAndDeduplicateSummary(rawText: string): string {

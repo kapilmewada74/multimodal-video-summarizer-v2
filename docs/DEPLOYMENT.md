@@ -119,7 +119,7 @@ Replace every assumption with a real number. `GET /api/internal/stats` gives the
 
 ## 6. Security checklist before launch
 - [ ] `/api/health/ready` is the only probe exposed; `/api/internal/stats` needs `OPS_TOKEN`.
-- [ ] Supabase: RLS on every table (checker), storage bucket private, anonymous sign-ins **off**, email confirmations **on**, custom SMTP set.
+- [ ] Supabase: RLS on every table (checker), storage bucket private, anonymous sign-ins **on** (free try-out; a Turnstile captcha is a planned addition), manual linking **on**, email confirmations **on**, custom SMTP set.
 - [ ] Service-role key only on the server (never in the web image or a `NEXT_PUBLIC_` variable).
 - [ ] Google consent screen published; redirect URLs list only production (and staging) domains.
 - [ ] Firewall: only 80/443 (and SSH from your IP) open on the server.
@@ -127,3 +127,17 @@ Replace every assumption with a real number. `GET /api/internal/stats` gives the
 - [ ] Error monitoring and uptime alerts delivering to a phone you read.
 - [ ] Privacy Policy / Terms reviewed; contact address works.
 - [ ] Load test passed at the user count you expect in week one.
+
+
+## Link previews (WhatsApp, Telegram, X, LinkedIn, Slack)
+
+A shared summary (`/s/<token>`) and the site itself carry preview cards: the title, a short description and a 1200x630
+picture in our theme (video thumbnail, flashcard count). They are made by the web app (`opengraph-image.tsx`).
+
+- Set `NEXT_PUBLIC_APP_URL` to the public address of the site **before building**. The card address is built from it; if it
+  is missing, apps are told to fetch the picture from `localhost` and show no preview.
+- The web server must be able to reach the API (`BACKEND_API_URL`) to read a shared summary.
+- Titles in non-Latin scripts (for example Hindi) keep their real title in the preview text, but the card picture shows
+  "Shared study notes", because the built-in image font cannot draw those letters. Loading a font would fix it.
+- Apps cache previews. After changing a card, re-scrape it with Facebook's Sharing Debugger (also used by WhatsApp),
+  LinkedIn's Post Inspector or Telegram's `@WebpageBot`.

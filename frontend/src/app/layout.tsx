@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   applicationName: SITE.name,
   openGraph: { type: "website", siteName: SITE.name, title: "SUMMARIZE.AI — Turn any video into study material", description: DESCRIPTION, url: SITE.url },
-  twitter: { card: "summary", title: "SUMMARIZE.AI", description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "SUMMARIZE.AI", description: DESCRIPTION },
 };
 
 // Fit the screen width, and keep pinch-zoom available (never block it: it is an accessibility feature).
@@ -41,6 +41,13 @@ export default function RootLayout({
         {SITE.analyticsDomain && (
           <script defer data-domain={SITE.analyticsDomain} src={`${SITE.analyticsHost}/js/script.tagged-events.js`} />
         )}
+        {/* Apply the saved theme BEFORE the first paint. Without this the page is drawn light, then switches to dark after
+            the scripts load, and the colour transition on every surface shows as a muddy grey/olive flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('theme')==='dark'){var c=document.documentElement.classList;c.remove('light');c.add('dark');}}catch(e){}`,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

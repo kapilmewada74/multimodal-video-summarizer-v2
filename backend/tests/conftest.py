@@ -17,6 +17,11 @@ BACKEND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
+# Importing the config reads the project's .env file (load_dotenv). Do it once, here, BEFORE the first test runs:
+# otherwise the first test of a run imports it lazily, after the isolation fixture removed those variables, and
+# silently gets the developer's real SUPABASE_URL and keys.
+import summarizer.core.config  # noqa: E402,F401
+
 JWT_SECRET = "test-secret-test-secret-test-secret-123"
 
 

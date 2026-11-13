@@ -47,6 +47,30 @@ export async function sendEmailLink(supabase: AuthClient, email: string, redirec
   if (error) throw error;
 }
 
+/** A guest is someone using the free try-out (an anonymous Supabase session) who has not signed in yet. */
+export function isGuestSession(session: Session | null): boolean {
+  return Boolean(session?.user?.is_anonymous);
+}
+
+/** Opens a guest session for the free try-out. Nothing is asked of the person. */
+export async function startGuestSession(supabase: AuthClient): Promise<Session> {
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error || !data.session) throw error ?? new Error("no session");
+  return data.session;
+}
+
+/**
+ * A guest signing in with Google keeps what they made: Google is linked to the SAME user. If that Google account
+ * already has its own account here (a returning person on a new browser), we sign in to it instead.
+ */
+export async function upgradeGuestWithGoogle(supabase: AuthClient, redirectTo: string): Promise<void> {
+  const { error } = await supabase.auth.linkIdentity({ provider: "google", options: { redirectTo, queryParams: { prompt: "select_account" } } });
+  if (!error) return;
+  const text = `${(error as { code?: string }).code ?? ""} ${error.message ?? ""}`.toLowerCase();
+  if (text.includes("already") || text.includes("identity_already_exists")) return startGoogleSignIn(supabase, redirectTo);
+  throw error;
+}
+
 /** Does this session already have a Google identity? */
 export function hasGoogle(session: Session | null): boolean {
   return Boolean(session?.user?.identities?.some((i) => i.provider === "google"));
@@ -88,6 +112,9 @@ export function signInErrorMessage(error: unknown): string {
   if (code === "provider_disabled" || text.includes("provider is not enabled") || text.includes("unsupported provider")) return "Google sign-in is not switched on for this app yet.";
   if (code === "validation_failed" || text.includes("invalid email") || text.includes("unable to validate email")) return "That email address does not look right.";
   if (code === "email_address_invalid") return "That email address cannot be used.";
+  if (code === "anonymous_provider_disabled" || text.includes("anonymous sign-ins are disabled")) return "The free try-out is not switched on yet. Please sign in to continue.";
+  if (code === "manual_linking_disabled" || text.includes("manual linking is disabled")) return "Linking your account is not switched on yet. Please sign in again.";
+  if (code === "over_request_rate_limit" || code === "over_sms_send_rate_limit") return "Too many tries from your network. Please wait a few minutes and try again.";
   if (code === "signup_disabled" || text.includes("signups not allowed")) return "New accounts are switched off right now.";
   if (text.includes("failed to fetch") || text.includes("network")) return "Could not reach the sign-in service. Check your connection and try again.";
   return "Sign-in did not work. Please try again.";

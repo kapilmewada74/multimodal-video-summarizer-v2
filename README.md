@@ -158,8 +158,8 @@ cd multimodal-video-summarizer
 ### 2. Create a Supabase project
 
 The app stores users, videos and jobs in Supabase (Postgres, sign-in, storage). Follow
-[docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md): create a project, turn on Google and email sign-in (leave
-anonymous sign-ins off), and apply the migrations in `supabase/migrations/`.
+[docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md): create a project, turn on Google and email sign-in (and
+anonymous sign-ins for the free try-out), and apply the migrations in `supabase/migrations/`.
 
 ### 3. Backend Setup
 
@@ -185,8 +185,9 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. People sign in with Google or an emailed link (there are no guests). Each
-account can add 10 videos per day.
+Open <http://localhost:3000>. A visitor can paste a YouTube link and get the summary, transcript, flashcards, mind map, slides and quiz without
+an account (a free try-out of 2 videos per day). Signing in with Google or an emailed link keeps what they made and
+unlocks the library, playlists, study tools, notes, documents and uploads (10 videos per day).
 
 ### 5. Run with Docker (optional)
 

@@ -103,7 +103,7 @@ def process_job(conn, job: dict, deps: PipelineDeps) -> None:
     repo.save_result(conn, video_id, title=title, duration=duration, language=None,
                      transcript=transcript, provider=provider, summary=summary, engine=engine)
     repo.update_job(conn, job["id"], status="completed", step=3, step_name="Complete", progress=100,
-                    message=f"Video successfully summarized with {engine}!", finished_at=_now(conn))
+                    message="Video successfully summarized!", finished_at=_now(conn))
 
 
 def _now(conn):

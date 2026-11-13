@@ -70,11 +70,11 @@ export function FeaturesSection() {
                  CARD 1: STRUCTURED STUDY NOTES & WORKSPACE
                  In Light: Space Black. In Dark: Warm Ivory (#F2F2F0)
                  ============================================================ */}
-            <ScrollStackItem itemClassName="min-h-[380px] bg-[#0E0F0C] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-white/10 dark:border-black/10 rounded-[28px] overflow-hidden p-6 sm:p-9 flex flex-col justify-between transition-colors">
+            <ScrollStackItem itemClassName="min-h-[380px] bg-[#0A0A0A] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-white/10 dark:border-black/10 rounded-[28px] overflow-hidden p-6 sm:p-9 flex flex-col justify-between transition-colors">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center h-full">
                 {/* Left: Real SUMMARIZE.AI Note Workspace Mockup Preview */}
                 <div className="hidden md:flex md:col-span-5 items-center justify-center">
-                  <div className="w-full max-w-[320px] bg-[#121310] rounded-2xl border border-white/10 shadow-2xl p-4">
+                  <div className="w-full max-w-[320px] bg-[#0F0F0F] rounded-2xl border border-white/10 shadow-2xl p-4">
                     {/* Window top bar */}
                     <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10 text-[9px] font-mono text-white/50">
                       <div className="flex items-center gap-1.5">
@@ -238,7 +238,7 @@ export function FeaturesSection() {
                     </div>
                     <a
                       href="#app-top"
-                      className="px-5 py-2 rounded-full bg-[#0E0F0C] hover:bg-black text-white font-extrabold text-xs transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+                      className="px-5 py-2 rounded-full bg-[#0A0A0A] hover:bg-black text-white font-extrabold text-xs transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5"
                     >
                       <span>Practice Flashcards</span>
                       <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -295,11 +295,11 @@ export function FeaturesSection() {
                  CARD 3: PRESENTATION GENERATION
                  In Light: Space Black. In Dark: Warm Ivory (#F2F2F0)
                  ============================================================ */}
-            <ScrollStackItem itemClassName="min-h-[380px] bg-[#0E0F0C] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-white/10 dark:border-black/10 rounded-[28px] overflow-hidden p-6 sm:p-9 flex flex-col justify-between transition-colors">
+            <ScrollStackItem itemClassName="min-h-[380px] bg-[#0A0A0A] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-white/10 dark:border-black/10 rounded-[28px] overflow-hidden p-6 sm:p-9 flex flex-col justify-between transition-colors">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center h-full">
                 {/* Left: 16:9 Presentation Slide Mockup Preview */}
                 <div className="hidden md:flex md:col-span-5 items-center justify-center">
-                  <div className="w-full max-w-[320px] aspect-[16/10] bg-[#121310] rounded-xl border border-white/10 p-3.5 shadow-2xl flex flex-col justify-between">
+                  <div className="w-full max-w-[320px] aspect-[16/10] bg-[#0F0F0F] rounded-xl border border-white/10 p-3.5 shadow-2xl flex flex-col justify-between">
                     {/* Slide Header */}
                     <div className="flex items-center justify-between text-[8px] text-[var(--brand-lime)] font-mono">
                       <span className="font-bold">SLIDE 02 / 06</span>
@@ -421,9 +421,9 @@ export function FeaturesSection() {
           {/* Card 1: Paste URL or Upload */}
           <div className="group rounded-[28px] overflow-hidden bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 hover:border-[var(--brand-lime-hover)] dark:hover:border-[var(--brand-lime)] transition-all duration-300 ease-out flex flex-col justify-between cursor-pointer">
             {/* Top Illustration Area */}
-            <div className="bg-[#F5F5F0] dark:bg-[#151613] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-6 px-4 border-b border-[var(--card-border)]">
+            <div className="bg-[#F5F5F0] dark:bg-[#111111] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-6 px-4 border-b border-[var(--card-border)]">
               {/* Desktop Window Mockup */}
-              <div className="w-full max-w-[270px] bg-white dark:bg-[#0E0F0C] rounded-t-xl border border-black/10 dark:border-white/10 shadow-lg p-3 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02]">
+              <div className="w-full max-w-[270px] bg-white dark:bg-[#0A0A0A] rounded-t-xl border border-black/10 dark:border-white/10 shadow-lg p-3 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02]">
                 {/* Window Top Controls */}
                 <div className="flex items-center gap-1.5 pb-1 border-b border-black/5 dark:border-white/5">
                   <span className="w-2 h-2 rounded-full bg-[#FF5F56]" />
@@ -488,9 +488,9 @@ export function FeaturesSection() {
           {/* Card 2: Local Multimodal Analysis */}
           <div className="group rounded-[28px] overflow-hidden bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 hover:border-[var(--brand-lime-hover)] dark:hover:border-[var(--brand-lime)] transition-all duration-300 ease-out flex flex-col justify-between cursor-pointer">
             {/* Top Illustration Area */}
-            <div className="bg-[#FBF1EC] dark:bg-[#151613] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-4 px-4 border-b border-[var(--card-border)]">
+            <div className="bg-[#FBF1EC] dark:bg-[#111111] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-4 px-4 border-b border-[var(--card-border)]">
               {/* Smartphone Frame Mockup */}
-              <div className="w-[170px] bg-white dark:bg-[#0E0F0C] rounded-t-2xl border border-black/10 dark:border-white/10 shadow-xl p-2.5 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02] relative">
+              <div className="w-[170px] bg-white dark:bg-[#0A0A0A] rounded-t-2xl border border-black/10 dark:border-white/10 shadow-xl p-2.5 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02] relative">
                 {/* Phone Status Bar */}
                 <div className="flex items-center justify-between text-[7px] text-black/60 dark:text-white/60 font-mono pb-1 border-b border-black/5 dark:border-white/5">
                   <span className="font-bold">9:41</span>
@@ -546,9 +546,9 @@ export function FeaturesSection() {
           {/* Card 3: Study, Test & Export */}
           <div className="group rounded-[28px] overflow-hidden bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 hover:border-[var(--brand-lime-hover)] dark:hover:border-[var(--brand-lime)] transition-all duration-300 ease-out flex flex-col justify-between cursor-pointer">
             {/* Top Illustration Area */}
-            <div className="bg-[#FBF1EC] dark:bg-[#151613] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-4 px-4 border-b border-[var(--card-border)]">
+            <div className="bg-[#FBF1EC] dark:bg-[#111111] h-[210px] w-full rounded-t-[26px] overflow-hidden relative flex items-end justify-center pt-4 px-4 border-b border-[var(--card-border)]">
               {/* Document + API Code Mockup */}
-              <div className="w-full max-w-[270px] bg-white dark:bg-[#0E0F0C] rounded-t-xl border border-black/10 dark:border-white/10 shadow-lg p-3 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02] relative">
+              <div className="w-full max-w-[270px] bg-white dark:bg-[#0A0A0A] rounded-t-xl border border-black/10 dark:border-white/10 shadow-lg p-3 pb-8 flex flex-col gap-2 translate-y-3 transition-transform duration-300 ease-out group-hover:translate-y-1 group-hover:scale-[1.02] relative">
                 {/* Avatars Header */}
                 <div className="flex items-center gap-1.5 pb-1">
                   <span className="w-5 h-5 rounded-full bg-[#6C5CE7] text-white flex items-center justify-center text-[8px] font-bold">R</span>

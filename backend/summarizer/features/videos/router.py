@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
-from ...core.auth import AuthUser, current_user
+from ...core.auth import AuthUser, current_actor, current_user
 from ...core.config import get_settings
 from ...core.db import connection
 from ...core.errors import AppError
@@ -57,7 +57,8 @@ def _store_and_enqueue(tmp_path: Path, user_id: str, file_hash: str, safe_name: 
 
 
 @router.post("/summarize/url")
-def summarize_url(payload: URLRequest, request: Request, user: AuthUser = Depends(current_user),):
+def summarize_url(payload: URLRequest, request: Request, user: AuthUser = Depends(current_actor),):
+    """Open to guests (free try-out) as well as accounts; guests have a smaller daily allowance."""
     url = (payload.url or "").strip()
     if not url:
         raise AppError(400, "url_required", "YouTube URL is required.")
@@ -68,7 +69,8 @@ def summarize_url(payload: URLRequest, request: Request, user: AuthUser = Depend
 
     with connection() as conn:
         enforce_ip_limit(conn, request)
-        job = repo.enqueue_ingest(conn, user.id, "youtube", url, youtube_id, None, payload.mode or "educational")
+        job = repo.enqueue_ingest(conn, user.id, "youtube", url, youtube_id, None, payload.mode or "educational",
+                                  is_guest=user.is_guest)
     return {"job_id": str(job["id"]), "status": job["status"], "message": "Video summarization task started."}
 
 
@@ -120,7 +122,7 @@ async def summarize_upload(request: Request, file: UploadFile = File(...), mode:
 
 @router.get("/job/{job_id}")
 @router.get("/jobs/{job_id}")
-def job_status(job_id: str, user: AuthUser = Depends(current_user)):
+def job_status(job_id: str, user: AuthUser = Depends(current_actor)):
     with connection() as conn:
         job = repo.get_job(conn, job_id, user.id)
         if not job:

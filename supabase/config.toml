@@ -30,8 +30,9 @@ additional_redirect_urls = [
 ]
 jwt_expiry = 3600
 enable_signup = true
-# No guests: everyone signs in with Google or an emailed link. The API also refuses anonymous sessions.
-enable_anonymous_sign_ins = false
+# Free try-out: a visitor who pastes a YouTube link gets a guest (anonymous) session, with a smaller daily allowance.
+# Guests can only use the summary and study tools; everything else needs a real account (Google or emailed link).
+enable_anonymous_sign_ins = true
 # Lets someone who signed in by email link their Google account to the SAME user (needed for "Save to Google Drive").
 enable_manual_linking = true
 
@@ -40,6 +41,23 @@ enable_signup = true
 # People prove they own the address by opening the link we send.
 enable_confirmations = true
 otp_expiry = 3600
+
+# Our branded sign-in emails (built by scripts/build_email_templates.py). Hosted projects: see docs/SUPABASE_SETUP.md.
+[auth.email.template.confirmation]
+subject = "Confirm your email for SUMMARIZE.AI"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your SUMMARIZE.AI sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email for SUMMARIZE.AI"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "Your SUMMARIZE.AI verification code"
+content_path = "./supabase/templates/reauthentication.html"
 
 [auth.external.google]
 enabled = true

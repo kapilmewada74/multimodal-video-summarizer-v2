@@ -117,7 +117,7 @@ export function GeneratingProgressCard({ job }: GeneratingProgressCardProps) {
       className="w-full max-w-2xl mx-auto mt-2 sm:mt-4 mb-20 sm:mb-28 lg:mb-32 p-6 sm:p-9 rounded-3xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm text-center relative overflow-hidden transition-all duration-300 no-print"
     >
       {/* Ambient Radial Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-36 bg-[var(--brand-lime)]/15 dark:bg-[var(--brand-lime)]/10 blur-3xl rounded-full pointer-events-none -z-0" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-36 bg-[var(--brand-lime)]/15 dark:hidden blur-3xl rounded-full pointer-events-none -z-0" />
 
       {/* Progress Headline & Real-Time Contextual Status */}
       <div className="mt-2 mb-7 relative z-10">
@@ -189,7 +189,7 @@ export function GeneratingProgressCard({ job }: GeneratingProgressCardProps) {
                     {isCompleted ? (
                       <Check className="w-4 h-4 stroke-[3]" />
                     ) : isActive ? (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#0E0F0C] animate-pulse" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0A0A0A] animate-pulse" />
                     ) : (
                       <span>{stage.id}</span>
                     )}

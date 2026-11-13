@@ -76,7 +76,7 @@ export function FaqSection() {
           {/* Bottom Help / Contact Card with Elegant Hover Effect */}
           <div className="group relative overflow-hidden rounded-[24px] border border-black/10 dark:border-white/10 bg-[var(--card-bg)] p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-[var(--brand-lime)]/50 dark:hover:border-[var(--brand-lime)]/40 hover:-translate-y-1.5 transition-all duration-300 ease-out overflow-hidden cursor-default">
             {/* Ambient Corner Glow on Hover */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--brand-lime)]/15 dark:bg-[var(--brand-lime)]/20 rounded-full blur-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--brand-lime)]/15 dark:hidden rounded-full blur-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <h3 className="relative font-bold text-lg text-[var(--text-main)] mb-2 group-hover:text-black dark:group-hover:text-white transition-colors duration-200">
               Can&apos;t find answers?
@@ -86,7 +86,7 @@ export function FaqSection() {
             </p>
             <a
               href="#app-top"
-              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#181916] hover:bg-black text-white dark:bg-white dark:hover:bg-[var(--brand-lime)] dark:text-black font-semibold text-xs transition-all shadow-md hover:shadow-lg hover:scale-[1.03] active:scale-95 cursor-pointer group/btn"
+              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#181818] hover:bg-black text-white dark:bg-white dark:hover:bg-[var(--brand-lime)] dark:text-black font-semibold text-xs transition-all shadow-md hover:shadow-lg hover:scale-[1.03] active:scale-95 cursor-pointer group/btn"
             >
               <span>Contact us</span>
               <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -117,8 +117,8 @@ export function FaqSection() {
                 aria-controls={`faq-answer-${idx}`}
                 className={`rounded-[20px] p-5 sm:p-6 transition-all duration-300 ease-in-out cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] ${
                   isTarget
-                    ? "bg-[#EAEAE7] dark:bg-[#181916] border-black/10 dark:border-white/15 shadow-xs"
-                    : "bg-[#F5F5F3] dark:bg-[#121310] border-black/[0.04] dark:border-white/[0.06] hover:bg-[#ECECE9] dark:hover:bg-[#161714]"
+                    ? "bg-[#EAEAE7] dark:bg-[#181818] border-black/10 dark:border-white/15 shadow-xs"
+                    : "bg-[#F5F5F3] dark:bg-[#0F0F0F] border-black/[0.04] dark:border-white/[0.06] hover:bg-[#ECECE9] dark:hover:bg-[#151515]"
                 }`}
               >
                 {/* Header Row: Question & Toggle Button */}
@@ -129,7 +129,7 @@ export function FaqSection() {
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500 ease-in-out ${
                       isTarget
-                        ? "bg-[#0E0F0C] text-white dark:bg-[var(--brand-lime)] dark:text-[#0E0F0C] shadow-sm"
+                        ? "bg-[#0A0A0A] text-white dark:bg-[var(--brand-lime)] dark:text-[#0E0F0C] shadow-sm"
                         : "bg-black/[0.06] dark:bg-white/[0.08] text-black/70 dark:text-white/70"
                     }`}
                   >

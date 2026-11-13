@@ -8,7 +8,11 @@ export type FunnelEvent =
   | "summary_ready"
   | "study_started"
   | "playlist_created"
-  | "export_used";
+  | "export_used"
+  | "guest_started"
+  | "signin_prompt_shown"
+  | "signin_prompt_accepted"
+  | "signin_prompt_dismissed";
 
 type Plausible = (name: string, options?: { props?: Record<string, string | number | boolean> }) => void;
 

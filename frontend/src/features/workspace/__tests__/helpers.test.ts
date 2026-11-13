@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MindMapNode } from "../../../lib/types";
 import { countNodes, initialCollapsed, maxDepth, mindmapToMarkdown } from "../mindmap";
-import { isYouTubeId, shareUrl, whatsappUrl, youtubeEmbedUrl } from "../share";
+import { SHARE_TAGLINE, emailUrl, isYouTubeId, linkedinUrl, nativeSharePayload, shareMessage, shareUrl, telegramUrl, whatsappUrl, xUrl, youtubeEmbedUrl } from "../share";
 
 const tree: MindMapNode = {
   title: "Root",
@@ -45,10 +45,38 @@ describe("sharing helpers", () => {
     const link = whatsappUrl("Physics & Math: Lecture 1", "https://app.example.com/s/tok");
     expect(link.startsWith("https://wa.me/?text=")).toBe(true);
     const text = decodeURIComponent(link.slice("https://wa.me/?text=".length));
-    expect(text).toBe("Physics & Math: Lecture 1\nStudy notes: https://app.example.com/s/tok");
+    expect(text).toBe(`\u{1F4DA} Physics & Math: Lecture 1\n\n${SHARE_TAGLINE}\nhttps://app.example.com/s/tok`);
   });
   it("works without a title", () => {
-    expect(decodeURIComponent(whatsappUrl(null, "https://a.b/s/t").split("text=")[1])).toBe("Study notes: https://a.b/s/t");
+    expect(decodeURIComponent(whatsappUrl(null, "https://a.b/s/t").split("text=")[1])).toBe(`\u{1F4DA} Study notes\n\n${SHARE_TAGLINE}\nhttps://a.b/s/t`);
+  });
+  it("uses one message for every app, with the link last so the card preview attaches to it", () => {
+    const message = shareMessage("Lecture", "https://a.b/s/t");
+    expect(message.endsWith("https://a.b/s/t")).toBe(true);
+    expect(message).toContain("SUMMARIZE.AI");
+  });
+  it("builds a Telegram link with the address and the message separate", () => {
+    const link = new URL(telegramUrl("A & B", "https://a.b/s/t"));
+    expect(link.origin + link.pathname).toBe("https://t.me/share/url");
+    expect(link.searchParams.get("url")).toBe("https://a.b/s/t");
+    expect(link.searchParams.get("text")).toContain("A & B");
+  });
+  it("builds X, LinkedIn and e-mail links that survive special characters", () => {
+    const x = new URL(xUrl("Why 100% & more?", "https://a.b/s/t?x=1"));
+    expect(x.searchParams.get("url")).toBe("https://a.b/s/t?x=1");
+    expect(x.searchParams.get("text")).toContain("Why 100% & more?");
+    expect(new URL(linkedinUrl("https://a.b/s/t")).searchParams.get("url")).toBe("https://a.b/s/t");
+    const mail = emailUrl("Lecture & notes", "https://a.b/s/t");
+    expect(mail.startsWith("mailto:?subject=")).toBe(true);
+    expect(decodeURIComponent(mail)).toContain("Lecture & notes");
+    expect(decodeURIComponent(mail)).toContain("https://a.b/s/t");
+  });
+  it("keeps the post for X short", () => {
+    expect(new URL(xUrl("x".repeat(500), "https://a.b/s/t")).searchParams.get("text")!.length).toBeLessThanOrEqual(200);
+  });
+  it("gives the phone's share sheet a title, text and address", () => {
+    expect(nativeSharePayload("Lecture", "https://a.b/s/t")).toEqual({ title: "Lecture", text: `\u{1F4DA} Lecture\n${SHARE_TAGLINE}`, url: "https://a.b/s/t" });
+    expect(nativeSharePayload(null, "u").title).toBe("Study notes");
   });
 });
 

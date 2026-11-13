@@ -5,7 +5,9 @@ from uuid import UUID
 
 import psycopg
 
+from ...core.config import get_settings
 from ...core.errors import AppError
+from ...shared.public import public_engine, public_message
 
 logger = logging.getLogger("summarizer.jobs")
 
@@ -32,8 +34,24 @@ def ensure_profile(conn, user_id: str) -> None:
         raise AppError(401, "invalid_token", "Invalid or expired session. Please reload the page.")
 
 
-def usage(conn, user_id: str) -> Row:
+def apply_tier(conn, user_id: str, is_guest: bool) -> None:
+    """Guests get a smaller daily allowance; signing in restores the normal one (same user id, same data).
+    Only a value that matches the other tier is changed, so a limit set by hand for someone is left alone."""
+    settings = get_settings()
+    guest_limit, normal_limit = settings.guest_daily_limit, settings.daily_video_limit
+    if guest_limit == normal_limit:
+        return
+    if is_guest:
+        conn.execute("update profiles set daily_video_limit = %s where user_id = %s and daily_video_limit = %s",
+                     (guest_limit, user_id, normal_limit))
+    else:
+        conn.execute("update profiles set daily_video_limit = %s where user_id = %s and daily_video_limit = %s",
+                     (normal_limit, user_id, guest_limit))
+
+
+def usage(conn, user_id: str, is_guest: bool = False) -> Row:
     ensure_profile(conn, user_id)
+    apply_tier(conn, user_id, is_guest)
     row = conn.execute("select * from usage_today(%s)", (user_id,)).fetchone()
     return {
         "used": row["used"],
@@ -44,8 +62,9 @@ def usage(conn, user_id: str) -> Row:
 
 
 def enqueue_ingest(conn, user_id: str, source: str, source_ref: str,
-                   youtube_id: Optional[str], file_hash: Optional[str], mode: str) -> Row:
+                   youtube_id: Optional[str], file_hash: Optional[str], mode: str, is_guest: bool = False) -> Row:
     ensure_profile(conn, user_id)
+    apply_tier(conn, user_id, is_guest)
     try:
         return conn.execute(
             "select * from enqueue_ingest(%s, %s, %s, %s, %s, %s)",
@@ -53,7 +72,7 @@ def enqueue_ingest(conn, user_id: str, source: str, source_ref: str,
         ).fetchone()
     except psycopg.errors.RaiseException as exc:
         if "daily_limit_reached" in str(exc):
-            info = usage(conn, user_id)
+            info = usage(conn, user_id, is_guest)
             raise AppError(
                 429, "daily_limit_reached",
                 f"You have used {info['used']} of {info['limit']} videos today. "
@@ -98,7 +117,7 @@ def job_to_api(conn, job: Row) -> Row:
         "step": job["step"],
         "step_name": job["step_name"],
         "progress": job["progress"],
-        "message": job["message"] or "",
+        "message": public_message(job["message"]),
         "error": job["error"],
         "video_id": str(job["video_id"]) if job["video_id"] else None,
         "result": None,
@@ -106,6 +125,7 @@ def job_to_api(conn, job: Row) -> Row:
     if job["status"] == "completed" and job["video_id"]:
         payload["result"] = get_result(conn, str(job["video_id"]), job["mode"])
         if payload["result"]:
+            payload["result"] = {**payload["result"], "engine": public_engine(payload["result"]["engine"])}
             payload["video_title"] = payload["result"]["title"]
     return payload
 
@@ -130,7 +150,7 @@ def history(conn, user_id: str, limit: int = 20) -> List[Row]:
         "timestamp": r["added_at"].timestamp(),
         "summary": r["summary"],
         "transcript": r["transcript"],
-        "engine": r["engine"],
+        "engine": public_engine(r["engine"]),
     } for r in rows]
 
 

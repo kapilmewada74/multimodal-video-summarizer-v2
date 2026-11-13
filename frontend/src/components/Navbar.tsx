@@ -4,9 +4,31 @@ import React, { useState, useEffect } from "react";
 import { Sun, Moon, Menu, X, ArrowUpRight, Play } from "lucide-react";
 import { Logo } from "./Logo";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AccountMenu } from "../features/auth/AccountMenu";
 import { NotificationBell } from "../features/notifications/NotificationBell";
 import { useAuth } from "../features/auth/AuthProvider";
+
+const ACCOUNT_LINKS: Array<[string, string]> = [["/library", "Library"], ["/playlists", "Playlists"], ["/study", "Study"]];
+
+/**
+ * Which top-bar link the current page belongs to, so the lime underline is always under the right one.
+ * A finished summary is part of Home; a video's workspace is part of the Library.
+ */
+export function isActivePath(pathname: string, href: string): boolean {
+  const within = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
+  if (href === "/") return pathname === "/" || within("/summary");
+  if (href === "/library") return within("/library") || within("/video");
+  return within(href);
+}
+
+/** One style for every top-bar link: the page you are on has the lime underline. */
+const linkClass = (active: boolean) =>
+  `whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-md px-1.5 py-0.5 border-b-2 ${
+    active
+      ? "text-[var(--text-main)] border-[var(--brand-lime)]"
+      : "border-transparent hover:text-[var(--text-main)]"
+  }`;
 
 interface NavbarProps {
   theme: "dark" | "light";
@@ -16,7 +38,13 @@ interface NavbarProps {
 export function Navbar({ theme, onToggleTheme }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { configured, signedIn } = useAuth();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const homeActive = isActivePath(pathname, "/");
   const showLibrary = configured && signedIn;
+
+  // A new page always starts with the phone menu closed.
+  useEffect(() => setMobileMenuOpen(false), [pathname]);
 
   // Close mobile menu on Escape key press
   useEffect(() => {
@@ -47,20 +75,23 @@ export function Navbar({ theme, onToggleTheme }: NavbarProps) {
     <nav className="h-16 fixed inset-x-0 top-0 z-50 bg-[var(--card-bg)]/90 backdrop-blur-md border-b border-[var(--card-border)] px-4 sm:px-8 flex items-center justify-between transition-colors">
       <div className="w-full max-w-[2048px] mx-auto flex items-center justify-between">
         {/* Brand Logo & Name */}
-        <a
-          href="#"
+        <Link
+          href="/"
           onClick={(e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            // Already on the home page: just glide back to the top instead of reloading it.
+            if (isHome) {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           }}
           className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-lg p-1"
-          aria-label="SUMMARIZE.AI Home"
+          aria-label="SUMMARIZE.AI home"
         >
           <span className="shrink-0"><Logo size={30} /></span>
           <span className="truncate font-extrabold text-sm sm:text-base tracking-tight uppercase text-[var(--text-main)]">
             SUMMARIZE<span className="text-[var(--brand-lime-hover)] dark:text-[var(--brand-lime)]">.AI</span>
           </span>
-        </a>
+        </Link>
 
         {/* Nav Links & Actions */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-8">
@@ -73,24 +104,18 @@ export function Navbar({ theme, onToggleTheme }: NavbarProps) {
               letterSpacing: '-0.01em'
             }}
           >
-            {showLibrary && (
-              <>
-                {[["/library", "Library"], ["/playlists", "Playlists"], ["/study", "Study"]].map(([href, label]) => (
-                  <Link key={href} href={href} className="whitespace-nowrap hover:text-[var(--text-main)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-md px-1.5 py-0.5">
+            <Link href="/" aria-current={homeActive ? "page" : undefined} className={linkClass(homeActive)}>
+              Home
+            </Link>
+            {showLibrary &&
+              ACCOUNT_LINKS.map(([href, label]) => {
+                const active = isActivePath(pathname, href);
+                return (
+                  <Link key={href} href={href} aria-current={active ? "page" : undefined} className={linkClass(active)}>
                     {label}
                   </Link>
-                ))}
-              </>
-            )}
-            <a href="/#features" className={`whitespace-nowrap hover:text-[var(--text-main)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-md px-1.5 py-0.5 ${showLibrary ? "hidden xl:inline" : ""}`}>
-              Features
-            </a>
-            <a href="/#how-it-works" className={`whitespace-nowrap hover:text-[var(--text-main)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-md px-1.5 py-0.5 ${showLibrary ? "hidden xl:inline" : ""}`}>
-              How It Works
-            </a>
-            <a href="/#faq" className={`whitespace-nowrap hover:text-[var(--text-main)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] rounded-md px-1.5 py-0.5 ${showLibrary ? "hidden xl:inline" : ""}`}>
-              FAQ
-            </a>
+                );
+              })}
           </div>
 
           <NotificationBell />
@@ -144,8 +169,17 @@ export function Navbar({ theme, onToggleTheme }: NavbarProps) {
                 {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               </button>
             </div>
+            <Link
+              href="/"
+              aria-current={homeActive ? "page" : undefined}
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-3.5 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-between hover:border-[var(--brand-lime)] transition-all"
+            >
+              <span>Home</span>
+              <ArrowUpRight className="w-4 h-4 text-[var(--brand-lime-hover)] dark:text-[var(--brand-lime)]" />
+            </Link>
             {showLibrary &&
-              [["/library", "Your Library"], ["/playlists", "Playlists"], ["/study", "Study & Goals"], ["/settings", "Notification Settings"]].map(([href, label]) => (
+              [["/library", "Your Library"], ["/playlists", "Playlists"], ["/study", "Study & Goals"], ["/account", "About and Usage"], ["/settings", "Notification Settings"]].map(([href, label]) => (
                 <Link
                   key={href}
                   href={href}
@@ -157,43 +191,17 @@ export function Navbar({ theme, onToggleTheme }: NavbarProps) {
                 </Link>
               ))}
 
-            <a
-              href="/#features"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-3.5 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-between hover:border-[var(--brand-lime)] transition-all"
-            >
-              <span>Features & Tools</span>
-              <ArrowUpRight className="w-4 h-4 text-[var(--brand-lime-hover)] dark:text-[var(--brand-lime)]" />
-            </a>
-
-            <a
-              href="/#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-3.5 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-between hover:border-[var(--brand-lime)] transition-all"
-            >
-              <span>How It Works</span>
-              <ArrowUpRight className="w-4 h-4 text-[var(--brand-lime-hover)] dark:text-[var(--brand-lime)]" />
-            </a>
-
-            <a
-              href="/#faq"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-3.5 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-between hover:border-[var(--brand-lime)] transition-all"
-            >
-              <span>Frequently Asked Questions</span>
-              <ArrowUpRight className="w-4 h-4 text-[var(--brand-lime-hover)] dark:text-[var(--brand-lime)]" />
-            </a>
-
-            <button
+            <Link
+              href="/"
               onClick={() => {
                 setMobileMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: "smooth" });
+                if (isHome) window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className="mt-4 h-12 rounded-full bg-[var(--brand-lime)] hover:bg-[var(--brand-lime-hover)] text-[#0E0F0C] font-black text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
             >
               <Play className="w-4 h-4 fill-current ml-0.5" />
               <span>Summarize New Video</span>
-            </button>
+            </Link>
           </div>
 
           <div className="text-center text-xs text-[var(--text-muted)] py-4">

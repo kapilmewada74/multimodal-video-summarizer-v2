@@ -30,7 +30,7 @@ summaries for long videos, a provider chain with fallback, Supabase Storage file
 the UI, and a usage badge. Deferred from the Phase 1 list: the Turnstile widget in the UI (the backend check
 is done and off by default).
 
-Sign-in decision (2026-11-12): guests and anonymous sign-in were removed. Sign-in is required (Google or an emailed link); the API refuses anonymous sessions; the guest-only bot check was removed. The older sections of this plan that describe guests are superseded by this.
+Sign-in decision (2026-11-12): guests and anonymous sign-in were removed. Superseded on 2026-11-13: a free try-out is back as a deliberate freemium step. A visitor who pastes a YouTube link gets a guest (anonymous) session, 2 videos per day, and the summary, transcript, flashcards, mind map, slides and quiz. The result opens on its own page (`/summary/<id>`) with a banner and a gentle sign-in card. Everything else (library, playlists, study, notes, documents, uploads, export) needs a real account (Google or emailed link), enforced by the API (`current_user` vs `current_actor`), not just hidden in the UI. Signing in links Google to the same user, so the guest's work is kept.
 
 Phase 4f delivered: study bar with a three-dot menu (focus timer with presets and custom lengths, pause tracking, goal for a visit), streak with one forgiven day per week, pomodoro counting, per-video study time, recent sessions, week strip and 12-week activity grid.
 

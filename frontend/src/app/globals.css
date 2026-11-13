@@ -30,25 +30,27 @@
   --color-danger: #DC2626;
 }
 
-/* Dark mode (active when html has .dark) */
+/* Dark mode (active when html has .dark).
+   Every dark surface is a NEUTRAL grey (red = green = blue). The old values (#0E0F0C, #141512 ...) had a little more green
+   than red and blue, which read as an olive/greenish black next to the lime accent. */
 html.dark,
 .dark {
   color-scheme: dark;
-  --bg-app: #0E0F0C;
-  --text-main: #F2F2F0;
-  --text-muted: rgba(242, 242, 240, 0.65);
-  --card-bg: #141512;
-  --card-border: rgba(242, 242, 240, 0.12);
-  --card-elevated: #1B1D18;
-  --input-bg: #181916;
-  --input-border: rgba(242, 242, 240, 0.16);
-  --btn-secondary-bg: rgba(242, 242, 240, 0.08);
-  --btn-secondary-hover: rgba(242, 242, 240, 0.16);
-  --btn-secondary-text: #F2F2F0;
+  --bg-app: #0A0A0A;
+  --text-main: #F2F2F2;
+  --text-muted: rgba(242, 242, 242, 0.65);
+  --card-bg: #111111;
+  --card-border: rgba(255, 255, 255, 0.12);
+  --card-elevated: #181818;
+  --input-bg: #141414;
+  --input-border: rgba(255, 255, 255, 0.16);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.16);
+  --btn-secondary-text: #F2F2F2;
 
   --heading-accent: var(--brand-lime);
   --code-text: var(--brand-lime);
-  --code-bg: rgba(242, 242, 240, 0.1);
+  --code-bg: rgba(255, 255, 255, 0.1);
 
   --color-success: #8ED081;
   --color-warning: #F4C95D;

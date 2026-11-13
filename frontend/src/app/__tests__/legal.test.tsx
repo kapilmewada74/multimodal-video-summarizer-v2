@@ -20,7 +20,14 @@ function text(node: React.ReactElement) {
 describe("legal pages", () => {
   it("privacy policy covers the rights the app really supports", () => {
     const t = text(<PrivacyPage />);
-    for (const word of ["Supabase", "Download my data", "Delete my account", "share link", "do not sell"]) expect(t).toContain(word);
+    for (const word of ["Service providers", "AI processing providers", "Download my data", "Delete my account", "share link", "do not sell"]) expect(t).toContain(word);
+  });
+  it("is honest about categories of providers without naming vendors or how the service is built", () => {
+    const t = text(<PrivacyPage />).toLowerCase() + text(<TermsPage />).toLowerCase();
+    for (const name of ["supabase", "groq", "gemini", "xai", "whisper", "resend", "vercel", "postgres", "sentry", "plausible", "fastapi", "row level", "database access rules"]) {
+      expect(t, name).not.toContain(name);
+    }
+    expect(t).toContain("current list of providers");   // the details are available on request
   });
   it("terms cover AI mistakes, acceptable use and deleting the account", () => {
     const t = text(<TermsPage />);

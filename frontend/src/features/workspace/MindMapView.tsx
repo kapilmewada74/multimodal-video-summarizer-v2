@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Download, Network, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Copy, Download, FileImage, FileCode2, Network, RefreshCw } from "lucide-react";
+import { ActionMenu } from "../../components/ui/ActionMenu";
+import { IconButton } from "../../components/ui/IconButton";
 import { MathText } from "../../components/MathText";
 import type { MindMapData, MindMapNode } from "../../lib/types";
 import { countNodes, initialCollapsed, mindmapToMarkdown } from "./mindmap";
@@ -184,6 +186,10 @@ export function MindMapView({ data, isLoading, onGenerate, onToast }: MindMapVie
     }
   };
 
+  // Everything open? Then the button offers "Collapse all"; otherwise "Expand all".
+  const allOpen = collapsed.size === 0;
+  const collapseTarget = initialCollapsed(data, 1);
+
   const baseName = (data.title || "mind-map").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 60) || "mind-map";
   const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const exportMap = async (kind: "svg" | "png") => {
@@ -205,49 +211,37 @@ export function MindMapView({ data, isLoading, onGenerate, onToast }: MindMapVie
           <h3 className="text-xl font-black tracking-tight text-[var(--text-main)]">Mind map</h3>
           <p className="text-xs text-[var(--text-muted)]">{countNodes(data)} ideas · {VIEWS.find((v) => v.id === view)?.hint}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
+        <div className="flex items-center gap-2" role="toolbar" aria-label="Mind map actions">
+          {/* One button for both directions: it offers whichever one makes sense right now. */}
+          <IconButton
+            label={allOpen ? "Collapse all" : "Expand all"}
+            disabled={allOpen && collapseTarget.size === 0}
             onClick={() => {
-              setCollapsed(new Set());
+              setCollapsed(allOpen ? collapseTarget : new Set());
               refit();
             }}
-            className="rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer"
           >
-            Expand all
-          </button>
-          <button
-            onClick={() => {
-              setCollapsed(initialCollapsed(data, 1));
-              refit();
-            }}
-            className="rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer"
-          >
-            Collapse
-          </button>
+            {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+          </IconButton>
           {view !== "outline" && (
-            <>
-              <button onClick={() => void exportMap("png")} className="flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer">
-                <Download className="h-3.5 w-3.5" /> PNG
-              </button>
-              <button onClick={() => void exportMap("svg")} className="flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer">
-                <Download className="h-3.5 w-3.5" /> SVG
-              </button>
-            </>
+            <ActionMenu
+              label="Download image"
+              icon={<Download className="h-4 w-4" />}
+              heading="Download as"
+              width="w-48"
+              items={[
+                { key: "png", label: "PNG image", hint: "For slides and documents", icon: <FileImage className="h-4 w-4" />, onSelect: () => void exportMap("png") },
+                { key: "svg", label: "SVG image", hint: "Sharp at any size", icon: <FileCode2 className="h-4 w-4" />, onSelect: () => void exportMap("svg") },
+              ]}
+            />
           )}
-          <button
-            onClick={copyOutline}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer"
-          >
-            <Copy className="h-3.5 w-3.5" /> Copy outline
-          </button>
+          <IconButton label="Copy outline" onClick={copyOutline}>
+            <Copy className="h-4 w-4" />
+          </IconButton>
           {onGenerate && (
-            <button
-              onClick={() => onGenerate(true)}
-              disabled={isLoading}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-1.5 text-xs font-bold cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} /> Regenerate
-            </button>
+            <IconButton label="Regenerate" onClick={() => onGenerate(true)} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            </IconButton>
           )}
         </div>
       </div>

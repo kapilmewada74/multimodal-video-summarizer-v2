@@ -134,7 +134,7 @@ export function ToolCard({ isProcessing, onSubmitUrl, onSubmitUpload, onError, o
             onClick={() => setActiveTab("url")}
             className={`flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm md:text-base font-bold transition-all cursor-pointer active:scale-95 ${
               activeTab === "url"
-                ? "bg-[#0E0F0C] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-black/10 dark:border-white/10 shadow-sm"
+                ? "bg-[#0A0A0A] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-black/10 dark:border-white/10 shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
             }`}
           >
@@ -147,7 +147,7 @@ export function ToolCard({ isProcessing, onSubmitUrl, onSubmitUpload, onError, o
             onClick={() => setActiveTab("upload")}
             className={`flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm md:text-base font-bold transition-all cursor-pointer active:scale-95 ${
               activeTab === "upload"
-                ? "bg-[#0E0F0C] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-black/10 dark:border-white/10 shadow-sm"
+                ? "bg-[#0A0A0A] text-white dark:bg-[#F2F2F0] dark:text-[#0E0F0C] border border-black/10 dark:border-white/10 shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
             }`}
           >
@@ -184,7 +184,7 @@ export function ToolCard({ isProcessing, onSubmitUrl, onSubmitUpload, onError, o
                 }
               }
             }}
-            className={`w-full h-16 sm:h-20 rounded-full border border-black/15 dark:border-white/15 bg-white dark:bg-[#141512] shadow-xs hover:shadow-md flex items-center px-3 sm:px-5 md:px-6 gap-3 sm:gap-4 transition-all focus-within:border-[var(--brand-lime-hover)] focus-within:ring-2 focus-within:ring-[var(--brand-lime)]/20 ${
+            className={`w-full h-16 sm:h-20 rounded-full border border-black/15 dark:border-white/15 bg-white dark:bg-[#111111] shadow-xs hover:shadow-md flex items-center px-3 sm:px-5 md:px-6 gap-3 sm:gap-4 transition-all focus-within:border-[var(--brand-lime-hover)] focus-within:ring-2 focus-within:ring-[var(--brand-lime)]/20 ${
               activeTab === "upload" && !selectedFile ? "cursor-pointer" : ""
             } ${
               isDragging
@@ -327,22 +327,22 @@ export function ToolCard({ isProcessing, onSubmitUrl, onSubmitUpload, onError, o
              5. FEATURE PILLS (NOTES, FLASHCARDS, SLIDES, QUIZ)
              ============================================================ */}
         <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 mt-8 sm:mt-10">
-          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181915]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181818]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
             <FileText className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span>Notes</span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181915]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181818]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
             <Layers className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span>Flashcards</span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181915]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181818]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
             <Monitor className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span>Slides</span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181915]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full border border-black/10 dark:border-white/10 bg-white/80 dark:bg-[#181818]/80 text-xs sm:text-sm font-medium text-[var(--text-main)] shadow-2xs">
             <HelpCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span>Quiz</span>
           </div>

@@ -64,7 +64,8 @@ export function parseLayout(raw: string | null | undefined): LayoutState {
   if (!raw) return { ...DEFAULT_LAYOUT };
   try {
     const data = JSON.parse(raw) as Partial<LayoutState>;
-    const orientation: OrientationChoice = data.orientation === "row" || data.orientation === "column" ? data.orientation : "auto";
+    // The Stacked button is gone: narrow screens stack on their own, wide ones are always side by side. Old choices are dropped.
+    const orientation: OrientationChoice = "auto";
     const fraction =
       typeof data.fraction === "number" && Number.isFinite(data.fraction) ? clamp(data.fraction, MIN_FRACTION, MAX_FRACTION) : DEFAULT_LAYOUT.fraction;
     const collapsed: Collapsed = data.collapsed === "first" || data.collapsed === "second" ? data.collapsed : null;

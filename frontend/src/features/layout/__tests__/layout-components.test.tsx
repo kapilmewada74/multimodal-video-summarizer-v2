@@ -32,6 +32,10 @@ afterEach(() => {
 const render = (node: React.ReactNode) => act(async () => { root.render(node); });
 const separator = () => container.querySelector('[role="separator"]') as HTMLElement | null;
 const pane = (which: "first" | "second") => container.querySelector(`[data-pane="${which}"]`) as HTMLElement | null;
+/** One of the Split / Video / Notes switch buttons, found by its exact label. */
+const view = (label: string) =>
+  Array.from(container.querySelectorAll("[aria-label='Workspace view'] button")).find((b) => b.textContent === label) as HTMLButtonElement;
+const resetButton = () => container.querySelector("button[aria-label='Reset layout']") as HTMLButtonElement;
 const button = (name: RegExp) => Array.from(container.querySelectorAll("button")).find((b) => name.test(b.textContent ?? "") || name.test(b.getAttribute("title") ?? "")) as HTMLButtonElement;
 
 function Harness(props: { orientation?: Orientation; collapsed?: Collapsed; start?: number; onReset?: () => void; onChange?: (f: number) => void }) {
@@ -155,62 +159,66 @@ describe("WorkspaceLayout", () => {
     expect(container.textContent).toContain("the video");
     expect(container.textContent).toContain("the notes");
     expect(separator()?.getAttribute("aria-orientation")).toBe("vertical");
-    expect(button(/Side by side/).getAttribute("aria-pressed")).toBe("true");
+    expect(view("Split").getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("is stacked on a narrow screen (tablet or phone), where side by side is not offered", async () => {
+  it("has no Stacked option: it is one switch with Split, Video and Notes", async () => {
+    await render(layout());
+    expect(container.textContent).not.toMatch(/Stacked/);
+    expect(container.textContent).not.toMatch(/Side by side/);
+    const group = container.querySelector("[role='group'][aria-label='Workspace view']")!;
+    expect(Array.from(group.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Split", "Video", "Notes"]);
+  });
+
+  it("stacks by itself on a narrow screen (tablet)", async () => {
     size = { width: 700, height: 900 };
     await render(layout());
     expect(separator()?.getAttribute("aria-orientation")).toBe("horizontal");
-    expect(button(/Side by side/).disabled).toBe(true);
-    expect(button(/Stacked/).getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("switches to stacked and back", async () => {
+  it("shows only the video, only the notes, or both again", async () => {
     await render(layout());
-    await act(async () => { button(/Stacked/).click(); });
-    expect(separator()?.getAttribute("aria-orientation")).toBe("horizontal");
-    await act(async () => { button(/Side by side/).click(); });
-    expect(separator()?.getAttribute("aria-orientation")).toBe("vertical");
-  });
-
-  it("expands the video or the notes, and restores them", async () => {
-    await render(layout());
-    await act(async () => { button(/Expand video/).click(); });
+    await act(async () => { view("Video").click(); });
     expect(container.textContent).toContain("the video");
     expect(container.textContent).not.toContain("the notes");
-    expect(button(/Show notes/).getAttribute("aria-pressed")).toBe("true");
-    await act(async () => { button(/Show notes/).click(); });
-    expect(container.textContent).toContain("the notes");
-    await act(async () => { button(/Expand notes/).click(); });
+    expect(view("Video").getAttribute("aria-pressed")).toBe("true");
+    await act(async () => { view("Notes").click(); });
     expect(container.textContent).not.toContain("the video");
-    await act(async () => { button(/Show video/).click(); });
+    expect(container.textContent).toContain("the notes");
+    await act(async () => { view("Split").click(); });
     expect(container.textContent).toContain("the video");
+    expect(container.textContent).toContain("the notes");
+    expect(view("Split").getAttribute("aria-pressed")).toBe("true");
   });
 
   it("resets to the default layout", async () => {
     await render(layout());
-    expect(button(/Reset layout/).disabled).toBe(true);           // already the default
-    await act(async () => { button(/Stacked/).click(); });
+    expect(resetButton().disabled).toBe(true);           // already the default
+    await act(async () => { view("Video").click(); });
+    await act(async () => { view("Split").click(); });
     await act(async () => { separator()!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })); });
-    await act(async () => { separator()!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })); });
-    expect(button(/Reset layout/).disabled).toBe(false);
-    await act(async () => { button(/Reset layout/).click(); });
-    expect(separator()?.getAttribute("aria-orientation")).toBe("vertical");
+    expect(resetButton().disabled).toBe(false);
+    await act(async () => { resetButton().click(); });
     expect(separator()?.getAttribute("aria-valuenow")).toBe("42");
-    expect(button(/Reset layout/).disabled).toBe(true);
+    expect(resetButton().disabled).toBe(true);
   });
 
-  it("remembers the layout between visits", async () => {
+  it("remembers the view between visits", async () => {
     await render(layout());
-    await act(async () => { button(/Stacked/).click(); });
-    await act(async () => { button(/Expand video/).click(); });
-    expect(JSON.parse(localStorage.getItem("test-layout")!)).toMatchObject({ orientation: "column", collapsed: "second" });
+    await act(async () => { view("Video").click(); });
+    expect(JSON.parse(localStorage.getItem("test-layout")!)).toMatchObject({ collapsed: "second" });
     act(() => root.unmount());
     root = createRoot(container);
     await render(layout());
     expect(container.textContent).not.toContain("the notes");
-    expect(button(/Show notes/)).toBeTruthy();
+    expect(view("Video").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("a layout saved with the old Stacked button is shown side by side again", async () => {
+    localStorage.setItem("test-layout", JSON.stringify({ orientation: "column", fraction: 0.42, collapsed: null }));
+    await render(layout());
+    expect(separator()?.getAttribute("aria-orientation")).toBe("vertical");
+    expect(resetButton().disabled).toBe(true);
   });
 
   it("ignores a damaged saved layout", async () => {

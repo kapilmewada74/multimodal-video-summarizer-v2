@@ -29,6 +29,7 @@ _jwks_lock = threading.Lock()
 class AuthUser:
     id: str
     email: Optional[str]
+    is_guest: bool = False
 
 
 def _jwks() -> PyJWKClient:
@@ -78,18 +79,29 @@ def decode_token(token: str) -> dict:
         raise AppError(401, "invalid_token", "Invalid or expired session. Please reload the page.")
 
 
-def current_user(authorization: Optional[str] = Header(default=None)) -> AuthUser:
-    """FastAPI dependency: the signed-in user. Only real accounts (Google or email) are accepted."""
+def _identify(authorization: Optional[str], allow_guest: bool) -> AuthUser:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise AppError(401, "not_authenticated", "Please sign in to continue.")
     claims = decode_token(authorization[7:].strip())
     if claims.get("role") != "authenticated":
         raise AppError(401, "invalid_token", "Invalid or expired session. Please reload the page.")
-    if claims.get("is_anonymous"):
-        # Anonymous ("guest") sessions are not part of the product. Refuse them even if the project still allows them.
-        raise AppError(403, "account_required", "Please sign in with Google or your email to use the app.")
+    guest = bool(claims.get("is_anonymous"))
+    if guest and not (allow_guest and get_settings().allow_guests):
+        raise AppError(403, "account_required", "Please sign in with Google or your email to use this feature.")
     try:
         user_id = str(UUID(str(claims["sub"])))
     except ValueError:
         raise AppError(401, "invalid_token", "Invalid or expired session. Please reload the page.")
-    return AuthUser(id=user_id, email=claims.get("email"))
+    return AuthUser(id=user_id, email=claims.get("email"), is_guest=guest)
+
+
+def current_user(authorization: Optional[str] = Header(default=None)) -> AuthUser:
+    """FastAPI dependency: a signed-in account (Google or email). Guest sessions are refused (403 account_required).
+    Use this for everything except the free try-out endpoints."""
+    return _identify(authorization, allow_guest=False)
+
+
+def current_actor(authorization: Optional[str] = Header(default=None)) -> AuthUser:
+    """FastAPI dependency for the free try-out: a signed-in account OR a guest (anonymous) session.
+    Only the endpoints that make up the free flow use this; the rest keep `current_user`."""
+    return _identify(authorization, allow_guest=True)

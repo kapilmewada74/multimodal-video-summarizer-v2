@@ -44,6 +44,13 @@ def bump_generation_usage(conn, user_id: str, limit: int) -> int:
     return conn.execute("select bump_generation_usage(%s, %s) n", (user_id, limit)).fetchone()["n"]
 
 
+def generations_today(conn, user_id: str) -> int:
+    """AI generations used so far today (UTC day, the same day the daily limit counts)."""
+    row = conn.execute("select count from generation_usage where user_id = %s and day = (now() at time zone 'UTC')::date",
+                       (user_id,)).fetchone()
+    return row["count"] if row else 0
+
+
 def get_user_output(conn, user_id: str, video_id: str, kind: str, variant: str = "") -> Optional[Dict[str, Any]]:
     row = conn.execute("select content from user_outputs where user_id = %s and video_id = %s and kind = %s and variant = %s",
                        (user_id, video_id, kind, variant)).fetchone()

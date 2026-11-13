@@ -1,6 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-import { callbackUrl, connectGoogle, hasGoogle, isValidEmail, profileOf, safeNext, sendEmailLink, signInErrorMessage, startGoogleSignIn } from "../session";
+import {
+  callbackUrl, connectGoogle, hasGoogle, isGuestSession, isValidEmail, profileOf, safeNext, sendEmailLink, signInErrorMessage, startGoogleSignIn,
+  startGuestSession, upgradeGuestWithGoogle,
+} from "../session";
 
 const client = (over: Record<string, unknown> = {}) => ({
   auth: {
@@ -146,5 +149,44 @@ describe("signInErrorMessage", () => {
   it("never shows raw technical text", () => {
     const text = signInErrorMessage(new Error("AuthApiError: weird internal 500 stack"));
     expect(text).toBe("Sign-in did not work. Please try again.");
+  });
+});
+
+describe("guests (the free try-out)", () => {
+  it("tells a guest session from an account", () => {
+    expect(isGuestSession(session({ is_anonymous: true }))).toBe(true);
+    expect(isGuestSession(session({ is_anonymous: false, email: "a@b.co" }))).toBe(false);
+    expect(isGuestSession(null)).toBe(false);
+  });
+
+  it("opens a guest session without asking anything", async () => {
+    const opened = { access_token: "t", user: { is_anonymous: true } };
+    const c = client({ signInAnonymously: vi.fn().mockResolvedValue({ data: { session: opened }, error: null }) });
+    await expect(startGuestSession(c as never)).resolves.toBe(opened);
+  });
+
+  it("reports a failed guest start instead of pretending it worked", async () => {
+    const c = client({ signInAnonymously: vi.fn().mockResolvedValue({ data: { session: null }, error: { code: "anonymous_provider_disabled", message: "Anonymous sign-ins are disabled" } }) });
+    await expect(startGuestSession(c as never)).rejects.toMatchObject({ code: "anonymous_provider_disabled" });
+    expect(signInErrorMessage({ code: "anonymous_provider_disabled" })).toMatch(/not switched on/i);
+  });
+
+  it("a guest signing in with Google adds Google to the SAME user, so nothing is lost", async () => {
+    const c = client();
+    await upgradeGuestWithGoogle(c as never, "https://app.example/auth/callback");
+    expect(c.auth.linkIdentity).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: "https://app.example/auth/callback", queryParams: { prompt: "select_account" } } });
+    expect(c.auth.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it("a returning person whose Google account already exists signs in to it instead", async () => {
+    const c = client({ linkIdentity: vi.fn().mockResolvedValue({ error: { code: "identity_already_exists", message: "Identity is already linked to another user" } }) });
+    await upgradeGuestWithGoogle(c as never, "https://app.example/auth/callback");
+    expect(c.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it("other linking errors are not hidden", async () => {
+    const c = client({ linkIdentity: vi.fn().mockResolvedValue({ error: { code: "manual_linking_disabled", message: "Manual linking is disabled" } }) });
+    await expect(upgradeGuestWithGoogle(c as never, "x")).rejects.toMatchObject({ code: "manual_linking_disabled" });
+    expect(signInErrorMessage({ code: "manual_linking_disabled" })).toMatch(/not switched on/i);
   });
 });

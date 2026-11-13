@@ -15,8 +15,14 @@ Two ways to get one. The schema and the code are the same for both.
 ### Hosted
 1. Create a project at <https://supabase.com/dashboard>.
 2. **Authentication > Sign In / Providers**:
-   - Keep **Allow anonymous sign-ins** OFF. The app has no guests: people sign in with Google or an emailed link,
-     and the API refuses anonymous sessions even if this is switched on by mistake.
+   - Turn **Allow anonymous sign-ins** ON. This powers the free try-out: a visitor who pastes a video link gets a
+     guest session (opened only at that moment, never just for visiting). Guests get a smaller daily allowance
+     (`GUEST_DAILY_LIMIT`, default 2) and can use only the summary and study-tool endpoints; every account feature
+     (library, playlists, study, notes, documents, uploads, export, account) answers a guest with `403 account_required`.
+     Set `ALLOW_GUESTS=false` on the API to switch the try-out off without touching Supabase.
+   - A bot check (Cloudflare Turnstile) is NOT built into the web app yet. Do not switch on **Attack Protection >
+     Captcha** in Supabase until a captcha widget is added to the page, or the guest session cannot be opened. Until
+     then the brakes are Supabase's own sign-in rate limit per address, the guest allowance and `IP_DAILY_LIMIT`.
    - Turn on **Manual linking** (lets someone who signed in by email connect Google later, for "Save to Google
      Drive", without creating a second account).
    - **Email**: keep it on with **Confirm email** on (the sign-in link proves the address). Supabase's built-in mailer
@@ -33,7 +39,7 @@ Two ways to get one. The schema and the code are the same for both.
 
 ### Local
 ```bash
-supabase start        # uses supabase/config.toml: Google, email link and manual linking are on; anonymous sign-ins are off
+supabase start        # uses supabase/config.toml: Google, email link, manual linking and anonymous sign-ins are on
 ```
 The command prints the local URL and keys. The database URL is
 `postgresql://postgres:postgres@127.0.0.1:54322/postgres`.
@@ -143,9 +149,15 @@ The generation cap is the `GENERATION_DAILY_LIMIT` environment variable.
 - `/login` offers **Continue with Google** and **Email me a sign-in link** (no passwords). Both return to
   `/auth/callback`, which finishes the sign-in and goes on to the page the person wanted (only paths on this site
   are accepted as a destination).
-- The API accepts only real accounts. A leftover anonymous (guest) session gets `403 account_required`.
-- The old bot check for guests (Turnstile) was removed together with guests. Abuse is limited by the per-account
-  daily limit and the per-address limit.
+- Account features accept only real accounts; a guest session gets `403 account_required` there. The free try-out
+  endpoints (summarize a YouTube link, follow the job, open the video and its outputs, download slides, usage) accept
+  guests too. Uploading a file needs an account.
+- When a guest signs in with Google, Google is linked to the SAME user (this needs **Manual linking** on), so what the
+  guest made is kept and the normal daily allowance returns. If that Google account already exists, the person signs in
+  to it instead and the guest's items stay with the guest session.
+- Abuse is limited by the guest allowance, the per-address limit and (planned) a Turnstile captcha. Old guest
+  accounts that never signed in can be removed after 30 days: `delete from auth.users where is_anonymous and created_at < now() - interval '30 days';`
+  (their videos, jobs and outputs are removed with them by the foreign keys).
 
 ## Not verified here
 
@@ -266,3 +278,21 @@ Apply migration `20261110000011_study_v2.sql` (`daily_stats.pomodoros`, `study_s
   where the time went (per video) and recent sessions, plus the existing 14-day chart and goals.
 - New endpoints: `GET /api/study/sessions`, `GET /api/study/videos`, and the overview now includes `week`,
   pomodoros and the streak details.
+
+
+## Sign-in emails in our design
+
+The emails Supabase sends (confirm your email, sign-in link, new email address, verification code) use the same
+design as our own notification emails: our colours, a lime button, dark mode where the mail app supports it.
+
+- Source: `backend/summarizer/features/notifications/email_layout.py` (one layout for every email).
+- Generated files: `supabase/templates/*.html`. Rebuild after a design change: `python scripts/build_email_templates.py`
+  (`--check` fails if the files are stale; the tests run it).
+- **Local** (`supabase start`): `supabase/config.toml` already points at the files.
+- **Hosted project**: paste each file in **Authentication > Email Templates** (Confirm signup, Magic link, Change email
+  address, Reauthentication), or run
+  `SUPABASE_ACCESS_TOKEN=<token> python scripts/apply_email_templates.py --project-ref <ref> --apply`
+  (leave out `--apply` for a dry run). The token is a personal access token from your Supabase account settings.
+- **Sender name and address**: the mail still says "Supabase Auth <noreply@mail.app.supabase.io>" until you set custom SMTP
+  (**Project Settings > Authentication > SMTP**; Resend works). Use sender name `SUMMARIZE.AI` and an address on your
+  own domain. Supabase's built-in sender is also limited to a few emails per hour, so custom SMTP is needed for launch.

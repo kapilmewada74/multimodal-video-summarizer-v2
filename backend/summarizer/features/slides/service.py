@@ -150,7 +150,7 @@ def sanitize_presentation_data(data: Dict[str, Any], default_title: str = "Prese
     return {
         "title": title,
         "slides": clean_slides,
-        "provider": data.get("provider", "Gemini AI")
+        "provider": data.get("provider", "AI")
     }
 
 

@@ -3,7 +3,7 @@ from typing import Literal, Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from ...core.auth import AuthUser, current_user
+from ...core.auth import AuthUser, current_actor
 from ...core.db import connection
 from ...core.errors import AppError
 from ..videos import repository as videos_repo
@@ -24,7 +24,7 @@ class OutputRequest(BaseModel):
 
 @router.post("/{video_id}/outputs/{kind}")
 def open_output(video_id: str, kind: Kind, payload: Optional[OutputRequest] = None,
-                user: AuthUser = Depends(current_user)):
+                user: AuthUser = Depends(current_actor)):
     """Open flashcards, a quiz, a mind map or slides for a video.
 
     The first request generates it (and counts toward the daily generation
@@ -39,7 +39,7 @@ def open_output(video_id: str, kind: Kind, payload: Optional[OutputRequest] = No
         return service.get_or_generate(
             user.id, str(video["id"]), kind, force=payload.force,
             difficulty=payload.difficulty, num_questions=payload.num_questions,
-            use_documents=payload.use_documents)
+            use_documents=payload.use_documents, is_guest=user.is_guest)
     except AppError:
         raise
     except Exception:

@@ -40,6 +40,10 @@ class Settings:
     max_video_seconds: int
     ip_daily_limit: int
     generation_daily_limit: int
+    allow_guests: bool
+    guest_daily_limit: int
+    guest_generation_limit: int
+    daily_video_limit: int
     streak_min_seconds: int
     max_document_bytes: int
     user_storage_quota_bytes: int
@@ -81,6 +85,13 @@ def get_settings() -> Settings:
         max_video_seconds=_int("MAX_VIDEO_SECONDS", 3 * 60 * 60),
         ip_daily_limit=_int("IP_DAILY_LIMIT", 30),
         generation_daily_limit=_int("GENERATION_DAILY_LIMIT", 60),
+        # Free try-out without an account (Supabase anonymous sign-in). Guests get a smaller allowance and
+        # can only use the summary/study-tool pipeline; everything else needs a real account.
+        allow_guests=_bool("ALLOW_GUESTS", True),
+        guest_daily_limit=_int("GUEST_DAILY_LIMIT", 2),
+        guest_generation_limit=_int("GUEST_GENERATION_LIMIT", 12),
+        # The allowance of a signed-in account (the database default). Used to restore it when a guest signs in.
+        daily_video_limit=_int("DAILY_VIDEO_LIMIT", 10),
         # Study time that makes a day count toward the streak (default 10 minutes).
         streak_min_seconds=_int("STREAK_MIN_SECONDS", 600),
         max_document_bytes=_int("MAX_DOCUMENT_MB", 25) * 1024 * 1024,

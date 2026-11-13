@@ -22,7 +22,7 @@ def test_url_job_runs_to_completion(api, tmp_path):
     assert job["result"]["duration"] == 120
     assert job["result"]["transcript"] == "hello world transcript"
     assert "It works." in job["result"]["summary"]
-    assert job["result"]["engine"] == "Fake (test-model)"
+    assert job["result"]["engine"] == "AI"          # the vendor/model is never sent to the browser
     assert deps.calls["whisper"] == 0  # captions were used
 
     history = api.client.get("/api/history", headers=user.headers).json()

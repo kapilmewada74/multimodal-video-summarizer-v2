@@ -87,8 +87,11 @@ describe("keeping the video 16:9", () => {
 
 describe("saved layouts", () => {
   it("round-trips", () => {
-    const layout = { orientation: "column" as const, fraction: 0.6, collapsed: "second" as const };
+    const layout = { orientation: "auto" as const, fraction: 0.6, collapsed: "second" as const };
     expect(parseLayout(JSON.stringify(layout))).toEqual(layout);
+  });
+  it("drops an orientation saved by the removed Stacked button", () => {
+    expect(parseLayout(JSON.stringify({ orientation: "column", fraction: 0.5, collapsed: null })).orientation).toBe("auto");
   });
   it("falls back to the default for missing or damaged values", () => {
     for (const raw of [null, undefined, "", "not json", "[]", "42", "null"]) {
@@ -105,7 +108,6 @@ describe("saved layouts", () => {
     expect(isDefaultLayout(DEFAULT_LAYOUT)).toBe(true);
     expect(isDefaultLayout({ ...DEFAULT_LAYOUT, fraction: 0.6 })).toBe(false);
     expect(isDefaultLayout({ ...DEFAULT_LAYOUT, collapsed: "first" })).toBe(false);
-    expect(isDefaultLayout({ ...DEFAULT_LAYOUT, orientation: "column" })).toBe(false);
   });
   it("clamp works at the edges", () => {
     expect(clamp(5, 0, 3)).toBe(3);

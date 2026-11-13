@@ -15,7 +15,7 @@ const signedInAuth = {
 const signedOutAuth = { ...signedInAuth, signedIn: false, email: null as string | null, usesGoogle: false, profile: { name: null as string | null, email: null as string | null, avatarUrl: null as string | null, initial: "?" } };
 let auth: typeof signedInAuth | typeof signedOutAuth = signedInAuth;
 vi.mock("../../features/auth/AuthProvider", () => ({ useAuth: () => auth }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/" }));
 vi.mock("../../features/notifications/NotificationBell", () => ({ NotificationBell: () => <button aria-label="Notifications" /> }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 

@@ -3,12 +3,12 @@
 import { track } from "../lib/analytics";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../features/auth/AuthProvider";
 import { Navbar } from "../components/Navbar";
 import { HeroSection } from "../components/HeroSection";
 import { ToolCard } from "../components/ToolCard";
-import { OutputWorkspace } from "../components/OutputWorkspace";
 import { GeneratingProgressCard } from "../components/GeneratingProgressCard";
 import { ErrorCard } from "../components/ErrorCard";
 import { FeaturesSection } from "../components/FeaturesSection";
@@ -17,7 +17,7 @@ import { Footer } from "../components/Footer";
 import { JobState, JobResult } from "../lib/types";
 import { apiFetch, readError } from "../lib/api";
 import { watchJob } from "../lib/realtime";
-import { UsageBadge } from "../features/limits/UsageBadge";
+import { SignInCard, SignInNudge } from "../features/guest/SignInCard";
 import { YouTubePlayer } from "../features/player/YouTubePlayer";
 import { extractYouTubeId } from "../features/player/youtube";
 import {
@@ -31,10 +31,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-const PENDING_URL_KEY = "pending-summarize-url";
+/** Results open on their own page, so this view (with all its study tools, maths and Markdown code) is rarely needed here. */
+const OutputWorkspace = dynamic(() => import("../components/OutputWorkspace").then((m) => m.OutputWorkspace), { ssr: false });
 
 export default function Home() {
-  const { ready: authReady, signedIn, configured: authConfigured } = useAuth();
+  const { signedIn, configured: authConfigured, ensureSession } = useAuth();
   const router = useRouter();
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [job, setJob] = useState<JobState | null>(null);
@@ -44,7 +45,8 @@ export default function Home() {
   const [isOnline, setIsOnline] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  const [usageRefresh, setUsageRefresh] = useState(0);
+  /** Why the sign-in card is open (an account-only action was tried), or null. */
+  const [gate, setGate] = useState<{ title: string; message: string } | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const handleUrlChange = React.useCallback((value: string) => setPreviewId(extractYouTubeId(value)), []);
 
@@ -138,15 +140,16 @@ export default function Home() {
 
         if (data.status === "completed") {
           stopTracking();
-          setUsageRefresh((n) => n + 1);
-          if (data.result) {
+          track("summary_ready");
+          if (data.video_id) {
+            // The result gets its own page, so this page stays just as it was.
+            router.push(`/summary/${data.video_id}`);
+          } else if (data.result) {
             setResult(data.result);
-            setResultVideoId(data.video_id ?? null);
             showToast("Video summarized successfully!", "success");
           }
         } else if (data.status === "failed") {
           stopTracking();
-          setUsageRefresh((n) => n + 1);
           showToast(data.error || "Summarization failed", "error");
         }
       } catch (err) {
@@ -161,26 +164,24 @@ export default function Home() {
 
   useEffect(() => stopTracking, []);
 
-  /** Summarizing needs an account (it uses your daily videos). Visitors are sent to sign in and come back to this link. */
-  const requireAccount = (pendingUrl?: string): boolean => {
+  /** Uploads (large files, heavy processing) need an account. Pasting a link is free without one. */
+  const requireAccountForUpload = (): boolean => {
     if (signedIn || !authConfigured) return false;
-    try {
-      if (pendingUrl) sessionStorage.setItem(PENDING_URL_KEY, pendingUrl);
-    } catch {
-      /* the link just has to be pasted again */
-    }
-    showToast("Sign in to summarize videos. It takes a few seconds.", "info");
-    router.push("/login?next=%2F");
+    setGate({ title: "Sign in to upload files", message: "Uploading your own video or audio needs a free account. Pasting a YouTube link works without one." });
     return true;
   };
 
   const handleUrlSubmit = async (url: string, force: boolean = false) => {
     const trimmed = url.trim();
     if (!trimmed) return;
-    if (requireAccount(trimmed)) return;
 
     if (!navigator.onLine) {
       showToast("Cannot process video while offline. Please reconnect.", "error");
+      return;
+    }
+    // Visitors try it without an account: a guest session is opened quietly, right now, and only now.
+    if (authConfigured && !(await ensureSession())) {
+      setGate({ title: "Sign in to continue", message: "We could not start the free try-out. Sign in to summarize this video." });
       return;
     }
 
@@ -216,11 +217,9 @@ export default function Home() {
         body: JSON.stringify({ url: trimmed }),
       });
       if (!res.ok) {
-        setUsageRefresh((n) => n + 1);
         throw new Error(await readError(res, "Failed to start summarization"));
       }
       const data = await res.json();
-      setUsageRefresh((n) => n + 1);
       track("summary_submitted", { source: "youtube" });
 
       showToast(force ? "Regenerating summary..." : "Pipeline initiated!", "info");
@@ -242,7 +241,7 @@ export default function Home() {
   };
 
   const handleUploadSubmit = async (file: File, force: boolean = false) => {
-    if (requireAccount()) return;
+    if (requireAccountForUpload()) return;
     const fileId = `${file.name}_${file.size}_${file.lastModified}`;
 
     if (!force && result && lastInputRef.current?.type === "upload" && lastInputRef.current?.value === fileId) {
@@ -280,11 +279,9 @@ export default function Home() {
         body: formData,
       });
       if (!res.ok) {
-        setUsageRefresh((n) => n + 1);
         throw new Error(await readError(res, "Failed to upload file"));
       }
       const data = await res.json();
-      setUsageRefresh((n) => n + 1);
 
       showToast(force ? "Regenerating summary..." : "File uploaded! Processing audio...", "info");
       startPolling(data.job_id);
@@ -303,23 +300,6 @@ export default function Home() {
       showToast(msg, "error");
     }
   };
-
-  // Back from signing in with a link waiting: continue where the visitor left off.
-  const pendingHandled = useRef(false);
-  useEffect(() => {
-    if (!authReady || !signedIn || pendingHandled.current) return;
-    pendingHandled.current = true;
-    try {
-      const pending = sessionStorage.getItem(PENDING_URL_KEY);
-      if (pending) {
-        sessionStorage.removeItem(PENDING_URL_KEY);
-        void handleUrlSubmit(pending);
-      }
-    } catch {
-      /* no storage: nothing was saved */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authReady, signedIn]);
 
   const handleRegenerateSummary = () => {
     if (!lastInputRef.current) return;
@@ -354,7 +334,6 @@ export default function Home() {
            ============================================================ */}
       <section className="w-full px-4 sm:px-6 pt-10 sm:pt-14 md:pt-18 pb-12 sm:pb-16 no-print">
         <div className="w-full max-w-5xl mx-auto">
-          <UsageBadge refreshKey={usageRefresh} />
           <ToolCard
             isProcessing={job?.status === "processing" || job?.status === "queued"}
             onSubmitUrl={handleUrlSubmit}
@@ -426,6 +405,10 @@ export default function Home() {
           <ChevronUp className="w-5 h-5 stroke-[2.5]" />
         </button>
       )}
+
+      {/* After a few seconds on the site, anyone without an account is invited to sign in (once; dismissals are remembered). */}
+      {!gate && <SignInNudge />}
+      {gate && <SignInCard title={gate.title} message={gate.message} next="/" onClose={() => setGate(null)} />}
 
       {/* Floating Toast Notification System */}
       {toast && (

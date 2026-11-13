@@ -50,15 +50,15 @@ def test_a_signed_in_account_can_submit(api):
 
 
 GUARDED = [
-    ("get", "/api/videos"), ("get", "/api/me/usage"), ("get", "/api/me/storage"), ("get", "/api/playlists"), ("get", "/api/documents"),
+    ("get", "/api/videos"), ("get", "/api/history"), ("get", "/api/me/storage"), ("get", "/api/playlists"), ("get", "/api/documents"),
     ("get", "/api/study/overview"), ("get", "/api/notifications"), ("post", "/api/study/sessions"),
-    ("post", "/api/playlists"), ("post", "/api/summarize/url"), ("put", "/api/study/goals"),
+    ("post", "/api/playlists"), ("put", "/api/study/goals"), ("get", "/api/me/export"), ("delete", "/api/me"),
 ]
 
 
 @pytest.mark.parametrize("method,path", GUARDED)
-def test_guest_sessions_cannot_use_the_app(api, method, path):
-    res = getattr(api.client, method)(path, headers=api.anonymous_headers(), **({"json": {}} if method != "get" else {}))
+def test_guest_sessions_cannot_use_account_features(api, method, path):
+    res = getattr(api.client, method)(path, headers=api.anonymous_headers(), **({"json": {}} if method in ("post", "put") else {}))
     assert res.status_code == 403 and res.json()["code"] == "account_required"
     assert api.sql("select count(*) from jobs")[0][0] == 0
     assert api.sql("select count(*) from user_videos")[0][0] == 0

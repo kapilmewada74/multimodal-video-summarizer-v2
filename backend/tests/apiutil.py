@@ -35,8 +35,22 @@ class Api:
 
     @staticmethod
     def anonymous_headers() -> dict:
-        """What a leftover guest session would send. The app must refuse it everywhere."""
+        """A guest token for a user that does not exist in the database."""
         return {"Authorization": f"Bearer {make_token(anonymous=True)}"}
+
+    def guest(self) -> User:
+        """A guest (Supabase anonymous sign-in): a real auth user with is_anonymous = true."""
+        uid = uuid.uuid4()
+        with psycopg.connect(self.db_url, autocommit=True) as conn:
+            conn.execute("insert into auth.users (id, email, is_anonymous) values (%s, null, true)", (uid,))
+        return User(str(uid), make_token(uid, anonymous=True))
+
+    def upgrade(self, guest: User) -> User:
+        """The guest signs in with Google: same user id, no longer anonymous."""
+        with psycopg.connect(self.db_url, autocommit=True) as conn:
+            conn.execute("update auth.users set is_anonymous = false, email = %s where id = %s",
+                         (f"{guest.id}@example.com", guest.id))
+        return User(guest.id, make_token(guest.id, extra={"email": f"{guest.id}@example.com"}))
 
     def sql(self, query, params=()):
         with psycopg.connect(self.db_url, autocommit=True) as conn:

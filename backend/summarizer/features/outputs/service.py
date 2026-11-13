@@ -123,8 +123,14 @@ def _get_or_generate_with_documents(user_id: str, video_id: str, kind: str, vari
             return repo.put_user_output(conn, user_id, video_id, kind, variant, content)
 
 
+def _generation_limit(is_guest: bool) -> int:
+    settings = get_settings()
+    return settings.guest_generation_limit if is_guest else settings.generation_daily_limit
+
+
 def get_or_generate(user_id: str, video_id: str, kind: str, *, force: bool = False,
-                    difficulty: str = "medium", num_questions: int = 5, use_documents: bool = False) -> Dict[str, Any]:
+                    difficulty: str = "medium", num_questions: int = 5, use_documents: bool = False,
+                    is_guest: bool = False) -> Dict[str, Any]:
     """Return the stored output, or generate (and store) it.
 
     Opening an existing output is free. Generating counts against the user's
@@ -139,6 +145,8 @@ def get_or_generate(user_id: str, video_id: str, kind: str, *, force: bool = Fal
         raise AppError(404, "unknown_output", "Unknown output type.")
     variant = quiz_variant(difficulty, num_questions) if kind == "quiz" else ""
     if use_documents:
+        if is_guest:
+            raise AppError(403, "account_required", "Sign in to use your own documents with a video.")
         return _get_or_generate_with_documents(user_id, video_id, kind, variant, force,
                                                {"difficulty": difficulty, "num_questions": num_questions})
 
@@ -160,7 +168,7 @@ def get_or_generate(user_id: str, video_id: str, kind: str, *, force: bool = Fal
             if stored is not None:
                 return stored
 
-        limit = get_settings().generation_daily_limit
+        limit = _generation_limit(is_guest)
         with connection() as conn:
             used = repo.bump_generation_usage(conn, user_id, limit)
         if used < 0:

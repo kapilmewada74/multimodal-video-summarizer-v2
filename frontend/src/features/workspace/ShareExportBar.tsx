@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Check, Cloud, Copy, Download, Link2, MessageCircle, X } from "lucide-react";
+import { Check, Cloud, Copy, Download, Link2, Linkedin, Mail, MessageCircle, Send, Share2, X } from "lucide-react";
 import { ActionMenu } from "../../components/ui/ActionMenu";
 import { apiFetch, readError } from "../../lib/api";
 import type { VideoDetail } from "../../lib/types";
 import { getSupabase } from "../../lib/supabase";
 import { callbackUrl, connectGoogle } from "../auth/session";
 import { DRIVE_SCOPE, rememberPendingDrive, saveToDrive, takePendingDrive } from "./drive";
-import { shareUrl, whatsappUrl } from "./share";
+import { emailUrl, linkedinUrl, nativeSharePayload, shareUrl, telegramUrl, whatsappUrl, xUrl } from "./share";
 
 interface Props {
   videoId: string;
@@ -16,10 +16,13 @@ interface Props {
   onToast: (message: string, type?: "success" | "info" | "error") => void;
 }
 
+const channel =
+  "flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--card-bg)] hover:border-[var(--brand-lime-hover)] hover:bg-[var(--btn-secondary-bg)] px-3.5 py-1.5 text-xs font-bold text-[var(--text-main)] cursor-pointer active:scale-95 transition-colors";
+
 const button =
   "flex items-center gap-1.5 rounded-full border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] hover:bg-[var(--btn-secondary-hover)] px-3.5 py-1.5 text-xs font-bold text-[var(--btn-secondary-text)] cursor-pointer active:scale-95 disabled:opacity-50";
 
-/** Share link (copy / WhatsApp / stop sharing) and the Markdown study-pack download. */
+/** Share link (copy, WhatsApp, Telegram, X, LinkedIn, email, the phone's share sheet, stop sharing) and the Markdown study-pack download. */
 export function ShareExportBar({ videoId, title, onToast }: Props) {
   const [token, setToken] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -120,6 +123,17 @@ export function ShareExportBar({ videoId, title, onToast }: Props) {
     }
   };
 
+  // The phone's own share sheet (Messages, Instagram, Snapchat and anything else installed), where the browser has one.
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const nativeShare = async () => {
+    if (!link) return;
+    try {
+      await navigator.share(nativeSharePayload(title, link));
+    } catch {
+      /* closed without sharing: nothing to do */
+    }
+  };
+
   const copyLink = async () => {
     if (!link) return;
     try {
@@ -191,12 +205,47 @@ export function ShareExportBar({ videoId, title, onToast }: Props) {
                   {copied ? <Check className="h-3.5 w-3.5 text-[var(--color-success)]" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? "Copied" : "Copy"}
                 </button>
-                <a className={button} href={whatsappUrl(title, link)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                </a>
                 <button className={button} onClick={stopSharing} disabled={busy}>
                   <X className="h-3.5 w-3.5" /> Stop sharing
                 </button>
+              </div>
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Share via</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a className={channel} href={whatsappUrl(title, link)} target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
+                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                  </a>
+                  <a className={channel} href={telegramUrl(title, link)} target="_blank" rel="noopener noreferrer" aria-label="Share on Telegram">
+                    <Send className="h-3.5 w-3.5" /> Telegram
+                  </a>
+                  <a className={channel} href={xUrl(title, link)} target="_blank" rel="noopener noreferrer" aria-label="Share on X">
+                    <span aria-hidden className="text-[13px] font-black leading-none">&#120143;</span> X
+                  </a>
+                  <a className={channel} href={linkedinUrl(link)} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn">
+                    <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                  </a>
+                  <a className={channel} href={emailUrl(title, link)} aria-label="Share by email">
+                    <Mail className="h-3.5 w-3.5" /> Email
+                  </a>
+                  {canNativeShare && (
+                    <button className={channel} onClick={() => void nativeShare()} aria-label="More ways to share">
+                      <Share2 className="h-3.5 w-3.5" /> More
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">How your link looks when shared</p>
+                {/* The real card picture the apps will show (made by the same page that serves the link). */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${link.replace(/\/$/, "")}/opengraph-image`}
+                  alt={`Preview card for ${title ?? "your study notes"}`}
+                  width={1200}
+                  height={630}
+                  loading="lazy"
+                  className="aspect-[1200/630] w-full max-w-md rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] object-cover"
+                />
               </div>
             </>
           ) : (

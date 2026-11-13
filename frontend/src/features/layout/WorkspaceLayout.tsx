@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Columns2, Maximize2, Minimize2, Pin, PinOff, RotateCcw, Rows2 } from "lucide-react";
+import { Columns2, FileText, MonitorPlay, Pin, PinOff, RotateCcw } from "lucide-react";
 import { ResizableSplit } from "./ResizableSplit";
 import { useElementSize, useSavedLayout } from "./hooks";
 import { PHONE_MAX_WIDTH, PhoneModeContext } from "./phone";
-import { isDefaultLayout, resolveOrientation } from "./split";
+import { isDefaultLayout, resolveOrientation, type Collapsed } from "./split";
 
 interface Props {
   video: React.ReactNode;
@@ -17,9 +17,21 @@ const tool = "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 t
 const idle = "border-[var(--card-border)] bg-[var(--btn-secondary-bg)] text-[var(--text-main)] hover:bg-[var(--btn-secondary-hover)]";
 const active = "border-transparent bg-[var(--brand-lime)] text-[#0E0F0C]";
 
+const segment =
+  "inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm font-bold cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)]";
+const segmentOn = "bg-[var(--brand-lime)] text-[#0E0F0C] shadow-sm";
+const segmentOff = "text-[var(--text-muted)] hover:bg-[var(--card-bg)] hover:text-[var(--text-main)]";
+
+/** `id` is the pane that is hidden in that view ("second" = notes hidden, so the video fills the space). */
+const VIEWS: Array<{ id: Collapsed; label: string; hint: string; Icon: typeof Columns2 }> = [
+  { id: null, label: "Split", hint: "Video and notes side by side", Icon: Columns2 },
+  { id: "second", label: "Video", hint: "Let the video fill the space", Icon: MonitorPlay },
+  { id: "first", label: "Notes", hint: "Let the notes fill the space", Icon: FileText },
+];
+
 /**
  * The video and the study panel side by side (wide screens) or stacked (tablets and phones),
- * with a draggable divider, independent scrolling, collapse and a reset button.
+ * with a draggable divider, independent scrolling, a Split / Video / Notes switch and a reset button.
  */
 export function WorkspaceLayout({ video, panel, storageKey = "workspace-layout-v1" }: Props) {
   const { layout, setLayout, reset } = useSavedLayout(storageKey);
@@ -27,12 +39,10 @@ export function WorkspaceLayout({ video, panel, storageKey = "workspace-layout-v
   const measured = useElementSize(wrap).width;
   // Until the box has been measured (first paint, or a hidden tab) the window width is the best guess.
   const width = measured || (typeof window !== "undefined" ? window.innerWidth : 1280);
-  const orientation = resolveOrientation(layout.orientation, width);
-  const canChooseOrientation = width >= 1024;
+  // Wide screens put the video and notes side by side; narrow ones stack them by themselves.
+  const orientation = resolveOrientation("auto", width);
   const phone = width < PHONE_MAX_WIDTH;
   const [pinned, setPinned] = useState(true);
-
-  const toggleCollapse = (pane: "first" | "second") => setLayout({ collapsed: layout.collapsed === pane ? null : pane });
 
   if (phone) {
     // Phones: one scrolling page. The video stays pinned under the navigation bar while you read.
@@ -60,49 +70,34 @@ export function WorkspaceLayout({ video, panel, storageKey = "workspace-layout-v
 
   return (
     <div ref={wrap} className="w-full">
-      <div className="mb-3 flex flex-wrap items-center gap-2 no-print" role="toolbar" aria-label="Workspace layout">
+      <div className="mb-3 flex items-center justify-between gap-3 no-print">
+        <div role="group" aria-label="Workspace view" className="inline-flex items-center gap-1 rounded-2xl border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] p-1">
+          {VIEWS.map(({ id, label, hint, Icon }) => {
+            const on = layout.collapsed === id;
+            return (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={on}
+                title={hint}
+                onClick={() => setLayout({ collapsed: id })}
+                className={`${segment} ${on ? segmentOn : segmentOff}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            );
+          })}
+        </div>
         <button
           type="button"
-          className={`${tool} ${orientation === "row" ? active : idle}`}
-          aria-pressed={orientation === "row"}
-          disabled={!canChooseOrientation}
-          title={canChooseOrientation ? "Video and notes side by side" : "Side by side needs a wider screen"}
-          onClick={() => setLayout({ orientation: "row" })}
+          onClick={reset}
+          disabled={isDefaultLayout(layout)}
+          title="Back to the default layout"
+          aria-label="Reset layout"
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-transparent px-3 text-xs font-bold text-[var(--text-muted)] transition-colors hover:border-[var(--card-border)] hover:bg-[var(--btn-secondary-bg)] hover:text-[var(--text-main)] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-lime)] cursor-pointer"
         >
-          <Columns2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Side by side</span>
-        </button>
-        <button
-          type="button"
-          className={`${tool} ${orientation === "column" ? active : idle}`}
-          aria-pressed={orientation === "column"}
-          title="Video above, notes below"
-          onClick={() => setLayout({ orientation: "column" })}
-        >
-          <Rows2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Stacked</span>
-        </button>
-        <span className="mx-1 hidden h-5 w-px bg-[var(--card-border)] sm:block" aria-hidden />
-        <button
-          type="button"
-          className={`${tool} ${layout.collapsed === "second" ? active : idle}`}
-          aria-pressed={layout.collapsed === "second"}
-          onClick={() => toggleCollapse("second")}
-          title={layout.collapsed === "second" ? "Show the notes again" : "Make the video fill the space"}
-        >
-          {layout.collapsed === "second" ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">{layout.collapsed === "second" ? "Show notes" : "Expand video"}</span>
-        </button>
-        <button
-          type="button"
-          className={`${tool} ${layout.collapsed === "first" ? active : idle}`}
-          aria-pressed={layout.collapsed === "first"}
-          onClick={() => toggleCollapse("first")}
-          title={layout.collapsed === "first" ? "Show the video again" : "Make the notes fill the space"}
-        >
-          {layout.collapsed === "first" ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">{layout.collapsed === "first" ? "Show video" : "Expand notes"}</span>
-        </button>
-        <button type="button" className={`${tool} ${idle} ml-auto`} onClick={reset} disabled={isDefaultLayout(layout)} title="Back to the default layout">
-          <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Reset layout</span>
+          <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Reset</span>
         </button>
       </div>
 

@@ -6,6 +6,10 @@ describe("usage text", () => {
     expect(formatUsage({ used: 7, limit: 10, remaining: 3, resets_at: "" })).toBe("7 of 10 videos today");
   });
 
+  it("says when it is the free try-out", () => {
+    expect(formatUsage({ used: 1, limit: 2, remaining: 1, resets_at: "", guest: true })).toBe("Free try-out: 1 of 2 videos today");
+  });
+
   const now = new Date("2026-11-10T10:00:00Z");
   it.each([
     ["2026-11-10T10:30:00Z", "Resets in 30 min"],

@@ -1,9 +1,10 @@
 """The user's library and the video detail used by the workspace page."""
 from fastapi import APIRouter, Depends, Query
 
-from ...core.auth import AuthUser, current_user
+from ...core.auth import AuthUser, current_actor, current_user
 from ...core.db import connection
 from ...core.errors import AppError
+from ...shared.public import public_engine
 from ..jobs import repository as jobs_repo
 from ..outputs import repository as outputs_repo
 from ..sharing import repository as sharing_repo
@@ -36,7 +37,7 @@ def list_videos(limit: int = Query(30, ge=1, le=100), offset: int = Query(0, ge=
 
 
 @router.get("/{video_id}")
-def video_detail(video_id: str, user: AuthUser = Depends(current_user)):
+def video_detail(video_id: str, user: AuthUser = Depends(current_actor)):
     with connection() as conn:
         video = repo.user_video(conn, user.id, video_id)
         if not video:
@@ -61,7 +62,7 @@ def video_detail(video_id: str, user: AuthUser = Depends(current_user)):
         if result:
             detail["summary"] = result["summary"]
             detail["transcript"] = result["transcript"]
-            detail["engine"] = result["engine"]
+            detail["engine"] = public_engine(result["engine"])
         detail["outputs"] = outputs_repo.list_kinds(conn, vid)
         upload = conn.execute("select id from video_uploads where user_id = %s and video_id = %s order by created_at desc limit 1",
                               (user.id, vid)).fetchone()

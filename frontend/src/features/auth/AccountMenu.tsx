@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, ListVideo, LogIn, LogOut, Settings, TrendingUp } from "lucide-react";
+import { BookOpen, Gauge, ListVideo, LogIn, LogOut, Settings, TrendingUp } from "lucide-react";
 import { ActionMenu } from "../../components/ui/ActionMenu";
 import { useAuth } from "./AuthProvider";
 import type { Profile } from "./session";
@@ -62,6 +62,7 @@ export function AccountMenu({ variant = "bar" }: { variant?: "bar" | "menu" }) {
         { key: "library", label: "Your library", icon: <BookOpen className="h-4 w-4" />, onSelect: () => router.push("/library") },
         { key: "playlists", label: "Playlists", icon: <ListVideo className="h-4 w-4" />, onSelect: () => router.push("/playlists") },
         { key: "study", label: "Study and goals", icon: <TrendingUp className="h-4 w-4" />, onSelect: () => router.push("/study") },
+        { key: "account", label: "About and Usage", icon: <Gauge className="h-4 w-4" />, onSelect: () => router.push("/account") },
         { key: "settings", label: "Notification settings", icon: <Settings className="h-4 w-4" />, onSelect: () => router.push("/settings") },
         { key: "out", label: "Sign out", icon: <LogOut className="h-4 w-4" />, onSelect: () => void signOut(), separated: true },
       ]}

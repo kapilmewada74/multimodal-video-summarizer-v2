@@ -1,19 +1,29 @@
 "use client";
 
 import { track } from "../../lib/analytics";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { setTokenProvider } from "../../lib/api";
 import { getSupabase, isSupabaseConfigured } from "../../lib/supabase";
-import { callbackUrl, hasGoogle, profileOf, safeNext, sendEmailLink, signInErrorMessage, startGoogleSignIn, type Profile } from "./session";
+import {
+  callbackUrl, hasGoogle, isGuestSession, profileOf, safeNext, sendEmailLink, signInErrorMessage, startGoogleSignIn, startGuestSession,
+  upgradeGuestWithGoogle, type Profile,
+} from "./session";
 
 interface AuthState {
   /** The first session check has finished. */
   ready: boolean;
   /** Supabase keys are present in the environment. */
   configured: boolean;
+  /** A real account (Google or email). Guests of the free try-out are NOT counted: every account-only page keys off this. */
   signedIn: boolean;
+  /** Using the free try-out without an account. */
+  isGuest: boolean;
+  /** Any session at all: a real account or a guest. */
+  hasSession: boolean;
+  /** Makes sure there is a session to send requests with, opening a guest one if needed. False if that was not possible. */
+  ensureSession: () => Promise<boolean>;
   /** Signing out is in progress: pages should not bounce the person to the login page on the way home. */
   signingOut: boolean;
   session: Session | null;
@@ -65,12 +75,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // The guest session is opened only when someone actually tries a video, never just for visiting.
+  const guestStart = useRef<Promise<boolean> | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const ensureSession = useCallback(async (): Promise<boolean> => {
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    if (sessionRef.current) return true;
+    const existing = (await supabase.auth.getSession()).data.session;
+    if (existing) return true;
+    if (!guestStart.current) {
+      guestStart.current = startGuestSession(supabase)
+        .then((fresh) => {
+          setSession(fresh);
+          track("guest_started");
+          return true;
+        })
+        .catch(() => false)
+        .finally(() => {
+          guestStart.current = null;
+        });
+    }
+    return guestStart.current;
+  }, []);
+
   const signInWithGoogle = useCallback(async (next?: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Sign-in is not set up yet.");
     track("sign_in_started", { method: "google" });
     try {
-      await startGoogleSignIn(supabase, callbackUrl(window.location.origin, safeNext(next)));
+      const redirectTo = callbackUrl(window.location.origin, safeNext(next));
+      // A guest keeps their summaries: Google is added to the same user instead of making a new one.
+      if (isGuestSession(sessionRef.current)) await upgradeGuestWithGoogle(supabase, redirectTo);
+      else await startGoogleSignIn(supabase, redirectTo);
     } catch (err) {
       throw new Error(signInErrorMessage(err));
     }
@@ -102,10 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthState>(() => {
     const profile = profileOf(session);
     return {
-      ready, configured, signedIn: Boolean(session), signingOut, session, profile, email: profile.email,
+      ready, configured, signedIn: Boolean(session) && !isGuestSession(session), isGuest: isGuestSession(session),
+      hasSession: Boolean(session), ensureSession, signingOut, session, profile, email: profile.email,
       usesGoogle: hasGoogle(session), signInWithGoogle, signInWithEmail, signOut,
     };
-  }, [ready, configured, session, signingOut, signInWithGoogle, signInWithEmail, signOut]);
+  }, [ready, configured, session, signingOut, ensureSession, signInWithGoogle, signInWithEmail, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
