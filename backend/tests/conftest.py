@@ -20,7 +20,9 @@ if BACKEND not in sys.path:
 # Importing the config reads the project's .env file (load_dotenv). Do it once, here, BEFORE the first test runs:
 # otherwise the first test of a run imports it lazily, after the isolation fixture removed those variables, and
 # silently gets the developer's real SUPABASE_URL and keys.
-import summarizer.core.config  # noqa: E402,F401
+from summarizer.core import config as _config  # noqa: E402
+
+_config.get_settings.cache_clear()   # (using the import also keeps pyflakes quiet)
 
 JWT_SECRET = "test-secret-test-secret-test-secret-123"
 

@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# The template for the production server's settings holds no secrets and must be in the repository (CI and deploy read it).
+!.env.production.example
 
 # Python
 __pycache__/
