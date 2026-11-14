@@ -55,6 +55,7 @@ class Settings:
     vapid_subject: str
     resend_api_key: Optional[str]
     email_from: str
+    support_notify_email: Optional[str]
     file_store: str
     storage_bucket: str
     data_dir: Path
@@ -106,6 +107,8 @@ def get_settings() -> Settings:
         vapid_subject=os.getenv("VAPID_SUBJECT") or "mailto:admin@example.com",
         resend_api_key=os.getenv("RESEND_API_KEY") or None,
         email_from=os.getenv("EMAIL_FROM") or "Summarize <onboarding@resend.dev>",
+        # Where a note goes when someone uses the Contact us form (needs RESEND_API_KEY). Empty = tickets only show in the admin panel.
+        support_notify_email=(os.getenv("SUPPORT_NOTIFY_EMAIL") or "").strip() or None,
         file_store=os.getenv("FILE_STORE", "local").strip().lower(),
         storage_bucket=os.getenv("SUPABASE_STORAGE_BUCKET", "uploads"),
         data_dir=Path(os.getenv("DATA_DIR", REPO_ROOT / "data")),

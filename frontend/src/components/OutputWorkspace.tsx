@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { renderMarkdownWithMath } from "../lib/mathUtils";
 import { escapeHtml, sanitizeHtml } from "../lib/sanitize";
 import { MindMapView } from "../features/workspace/MindMapView";
@@ -34,6 +34,9 @@ import {
 import { JobResult } from "../lib/types";
 import dynamic from "next/dynamic";
 import type { Flashcard } from "./FlashcardsView";
+
+/** Which kind of generated output each tab shows (the summary, transcript, notes and documents tabs have none). */
+const OUTPUT_OF_TAB: Record<string, string> = { flashcards: "flashcards", mindmap: "mindmap", presentation: "slides", quiz: "quiz" };
 import type { PresentationData } from "./PresentationView";
 import type { QuizQuestion } from "./QuizView";
 
@@ -218,6 +221,9 @@ export function OutputWorkspace({
   // Optionally let the AI also read the user's own documents (the result is then private to them).
   const [useDocs, setUseDocs] = useState(false);
   const [usedDocs, setUsedDocs] = useState<string[]>([]);
+  // Which outputs are the person's OWN regenerated copy (the shared one is never changed by regenerating).
+  const [personal, setPersonal] = useState<Record<string, boolean>>({});
+  const lastQuizChoice = useRef({ difficulty: "medium", numQuestions: 5 });
   const usableDocs = useUsableDocumentCount(videoId, activeTab === "documents");
 
   const [presentation, setPresentation] = useState<PresentationData | null>(null);
@@ -388,7 +394,25 @@ export function OutputWorkspace({
     if (!res.ok) throw new Error(await readError(res, "Could not generate this. Please try again."));
     const data = await res.json();
     setUsedDocs(Array.isArray(data.used_documents) ? data.used_documents : []);
+    setPersonal((prev) => ({ ...prev, [kind]: data.personal === true }));
     return data;
+  };
+
+  // Drops the person's own copy so everyone's shared version shows again.
+  const switchToSharedVersion = async (kind: OutputKind) => {
+    if (!videoId) return;
+    const query = kind === "quiz" ? `?difficulty=${lastQuizChoice.current.difficulty}&num_questions=${lastQuizChoice.current.numQuestions}` : "";
+    try {
+      const res = await apiFetch(`/api/videos/${videoId}/outputs/${kind}${query}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await readError(res, "Could not switch back. Please try again."));
+      setPersonal((prev) => ({ ...prev, [kind]: false }));
+      if (kind === "flashcards") await handleGenerateFlashcards();
+      else if (kind === "mindmap") await handleGenerateMindmap();
+      else if (kind === "slides") await handleGeneratePresentation();
+      else await handleGenerateQuiz(lastQuizChoice.current.difficulty, lastQuizChoice.current.numQuestions);
+    } catch (err: unknown) {
+      onToast(err instanceof Error ? err.message : "Could not switch back", "error");
+    }
   };
 
   const handleGenerateFlashcards = async (forceRefresh: boolean = false) => {
@@ -397,7 +421,7 @@ export function OutputWorkspace({
       const data = await openOutput("flashcards", { force: forceRefresh });
       setFlashcards(data.flashcards || []);
       setFlashcardsProvider(data.provider || "");
-      if (forceRefresh) onToast("Flashcards regenerated!", "success");
+      if (forceRefresh) onToast("Made a new set just for you. Others keep the shared one.", "success");
     } catch (err: unknown) {
       onToast(err instanceof Error ? err.message : "Error generating flashcards", "error");
     } finally {
@@ -452,6 +476,7 @@ export function OutputWorkspace({
   }, [reloadTab]);
 
   const handleGenerateQuiz = async (difficulty: string = "medium", numQuestions: number = 5, forceRefresh: boolean = false) => {
+    lastQuizChoice.current = { difficulty, numQuestions };
     setIsLoadingQuiz(true);
     try {
       const data = await openOutput("quiz", { difficulty, num_questions: numQuestions, force: forceRefresh });
@@ -625,6 +650,19 @@ export function OutputWorkspace({
             setReloadTab(activeTab);
           }}
         />
+      )}
+
+      {videoId && !useDocs && personal[OUTPUT_OF_TAB[activeTab] ?? ""] && (
+        <div role="status" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--btn-secondary-bg)] px-3 py-2 text-xs text-[var(--text-muted)]">
+          <span>You are viewing the version you regenerated. Other people still see the shared one.</span>
+          <button
+            type="button"
+            onClick={() => void switchToSharedVersion(OUTPUT_OF_TAB[activeTab] as OutputKind)}
+            className="cursor-pointer font-bold text-[var(--text-main)] underline underline-offset-2"
+          >
+            Switch back to the shared version
+          </button>
+        </div>
       )}
 
       {/* Tab 1: AI Summary Content Pane */}

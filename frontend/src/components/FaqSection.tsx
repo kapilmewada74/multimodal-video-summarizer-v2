@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Asterisk, ArrowDown, ArrowUpRight } from "lucide-react";
 
 interface FaqItem {
@@ -42,7 +43,7 @@ export function FaqSection() {
     {
       question: "I need help with the app. How can I contact support?",
       answer:
-        "We are here to assist! Reach out directly via our contact button, open an issue on our GitHub repository, or email our developer team for immediate assistance and feature requests.",
+        "We are here to help. Use the Contact us button to send us a message, no account needed, and we will reply by email. Bug reports and ideas are welcome too.",
     },
   ];
 
@@ -84,13 +85,13 @@ export function FaqSection() {
             <p className="relative text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed mb-6">
               We&apos;re here to help you out whenever you need! Get in touch with our dedicated support team for personalized assistance anytime.
             </p>
-            <a
-              href="#app-top"
+            <Link
+              href="/contact"
               className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#181818] hover:bg-black text-white dark:bg-white dark:hover:bg-[var(--brand-lime)] dark:text-black font-semibold text-xs transition-all shadow-md hover:shadow-lg hover:scale-[1.03] active:scale-95 cursor-pointer group/btn"
             >
               <span>Contact us</span>
               <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </a>
+            </Link>
           </div>
         </div>
 

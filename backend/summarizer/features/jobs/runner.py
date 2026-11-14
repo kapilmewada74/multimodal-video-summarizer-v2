@@ -44,7 +44,7 @@ def _transcribe_youtube(url: str, job_id: str) -> str:
     video_path = providers.download_video(url, job_id)
     audio_path = None
     try:
-        audio_path = providers.extract_audio(video_path, job_id)
+        audio_path = _extract_audio_or_refuse(video_path, job_id)
         return providers.transcribe_audio(audio_path)
     finally:
         for leftover in (video_path, audio_path):
@@ -52,8 +52,15 @@ def _transcribe_youtube(url: str, job_id: str) -> str:
                 Path(leftover).unlink(missing_ok=True)
 
 
+def _extract_audio_or_refuse(path: Path, job_id: str) -> Path:
+    try:
+        return providers.extract_audio(path, job_id)
+    except providers.UnsupportedMedia as exc:
+        raise UserError(str(exc))
+
+
 def _transcribe_file(path: Path, job_id: str) -> str:
-    audio_path = providers.extract_audio(path, job_id)
+    audio_path = _extract_audio_or_refuse(path, job_id)
     try:
         return providers.transcribe_audio(audio_path)
     finally:

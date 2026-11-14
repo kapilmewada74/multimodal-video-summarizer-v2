@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   title: { default: "SUMMARIZE.AI — Multimodal Video Summarizer", template: "%s · SUMMARIZE.AI" },
   description: DESCRIPTION,
   applicationName: SITE.name,
+  // Each page names itself as its own address, so a copy reached through a query string or another domain is not a duplicate.
+  alternates: { canonical: "./" },
   openGraph: { type: "website", siteName: SITE.name, title: "SUMMARIZE.AI — Turn any video into study material", description: DESCRIPTION, url: SITE.url },
   twitter: { card: "summary_large_image", title: "SUMMARIZE.AI", description: DESCRIPTION },
 };

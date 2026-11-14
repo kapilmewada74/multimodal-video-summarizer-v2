@@ -39,10 +39,10 @@ describe("search engine files", () => {
   it("keeps private pages and shared summaries out of search results", () => {
     const rule = robots().rules as { disallow: string[] };
     const blocked = (Array.isArray(rule) ? rule[0].disallow : rule.disallow);
-    for (const path of ["/api/", "/library", "/s/", "/settings", "/video/"]) expect(blocked).toContain(path);
+    for (const path of ["/api/", "/library", "/s/", "/settings", "/video/", "/admin"]) expect(blocked).toContain(path);
   });
   it("lists only the public pages", () => {
     const urls = sitemap().map((e) => new URL(e.url).pathname);
-    expect(urls).toEqual(["/", "/privacy", "/terms"]);
+    expect(urls).toEqual(["/", "/contact", "/privacy", "/terms"]);
   });
 });

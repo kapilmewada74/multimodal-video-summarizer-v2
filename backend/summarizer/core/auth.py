@@ -18,6 +18,7 @@ from jwt import PyJWKClient
 
 from .config import get_settings
 from .errors import AppError
+from . import suspension
 
 ASYMMETRIC_ALGORITHMS = {"RS256", "ES256"}
 
@@ -92,6 +93,7 @@ def _identify(authorization: Optional[str], allow_guest: bool) -> AuthUser:
         user_id = str(UUID(str(claims["sub"])))
     except ValueError:
         raise AppError(401, "invalid_token", "Invalid or expired session. Please reload the page.")
+    suspension.enforce(user_id)
     return AuthUser(id=user_id, email=claims.get("email"), is_guest=guest)
 
 

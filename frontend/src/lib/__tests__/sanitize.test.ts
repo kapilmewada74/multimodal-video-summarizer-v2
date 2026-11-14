@@ -70,3 +70,37 @@ describe("HTML sanitising of AI output", () => {
     expect(sanitizeHtml("")).toBe("");
   });
 });
+
+describe("styles and links in untrusted HTML", () => {
+  it("removes inline styles from ordinary content, so nothing can be laid over the page", () => {
+    const out = sanitizeHtml('<div style="position:fixed;inset:0;background:white;z-index:9999">Sign in to continue</div><p style="color:red">x</p>');
+    expect(out).not.toContain("style=");
+    expect(out).toContain("Sign in to continue");
+  });
+
+  it("keeps the spacing styles KaTeX writes inside its own formulas", () => {
+    const out = sanitizeHtml('<span class="katex"><span class="base" style="height:0.64em;vertical-align:-0.08em"><span class="mord">x</span></span></span>');
+    expect(out).toContain('style="height:0.64em;vertical-align:-0.08em"');
+  });
+
+  it("still strips dangerous CSS from inside a formula", () => {
+    const out = sanitizeHtml('<span class="katex"><span class="base" style="position:fixed;top:0;left:0;width:100vw">x</span><span style="background:url(https://evil.example/p.png)">y</span></span>');
+    expect(out).not.toMatch(/position|url\(/i);
+    expect(out).toContain("x");
+  });
+
+  it("marks every link so it cannot reach back to the page that opened it", () => {
+    const out = sanitizeHtml('<a href="https://example.com" target="_blank">a</a><a href="https://example.com" target="_top">b</a>');
+    expect(out.match(/rel="noopener noreferrer nofollow"/g)).toHaveLength(2);
+    expect(out).not.toContain("_top");
+  });
+});
+
+describe("real KaTeX output survives the stricter rules", () => {
+  it("still has the spacing styles after rendering and cleaning", () => {
+    const html = renderMathInHtml("Energy is $E = mc^2$ and $$\\frac{a}{b}$$");
+    expect(html).toContain("katex");
+    expect(html).toMatch(/style="[^"]*(height|vertical-align|top|margin)/);
+    expect(html).not.toMatch(/position\s*:/);
+  });
+});

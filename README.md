@@ -44,6 +44,8 @@ Whether you are a student, researcher, educator, or professional, this applicati
 ### 4. Study Tools
 - Each video gets its own page: YouTube player plus summary, transcript, flashcards, mind map, slides and quiz.
 - Everything is generated once per video and saved, so reopening it is instant.
+- Try it without an account (a small free daily allowance); signing in keeps your work and unlocks the library, uploads and study tools.
+- "Regenerate" makes your own new version of flashcards, quiz, mind map or slides. The shared copy other people see is never overwritten.
 - Library of your videos, a public read-only share link (with WhatsApp) and a Markdown export.
 - A customized YouTube player (our own controls). Paste a link and the player appears right away.
 - Study tools: a study timer, daily goals, streaks, notes, playlists (import from YouTube, drag to reorder) and notifications.
@@ -52,7 +54,11 @@ Whether you are a student, researcher, educator, or professional, this applicati
 - Multiple-choice quiz with adjustable difficulty.
 - If no AI key is configured, these fall back to simple rule-based output and say so.
 
-### 5. Modern Web Interface
+### 5. Support and Administration
+- A Contact page (no account needed) sends messages to a support inbox.
+- An admin panel for a few main leads (admins) and support staff (sub-admins): tickets and email replies, users, videos, staff roles and an append-only audit log. See [docs/ADMIN_PANEL.md](docs/ADMIN_PANEL.md).
+
+### 6. Modern Web Interface
 - Modern and responsive user interface.
 - Easy video and audio upload workflow.
 - Simple URL-based video processing.
@@ -118,6 +124,8 @@ The application follows a modular architecture that separates the frontend, back
 | Programming Language | Python |
 | Frontend | Next.js, React, TypeScript |
 | Backend | FastAPI |
+| Database, sign-in, storage | Supabase (PostgreSQL, Auth, Storage, Realtime) |
+| Job queue | PostgreSQL (no separate queue service) |
 | Styling | Tailwind CSS |
 | Speech Recognition | Faster-Whisper |
 | Video Processing | yt-dlp, FFmpeg |
@@ -135,13 +143,20 @@ Follow these steps to run the project locally.
 
 ### Prerequisites
 
-Make sure you have installed:
+Install these once on your machine (they are not part of the repository):
 
-- Python 3.10 or later (use a version compatible with the project dependencies).
-- Node.js and npm.
-- Git.
-- FFmpeg.
-- CUDA-compatible NVIDIA GPU and drivers (optional, for GPU acceleration).
+| Tool | Version | Notes |
+|---|---|---|
+| Python | 3.10 or later (tested with 3.12) | `python3 --version` |
+| Node.js and npm | 20 or later (tested with 24) | `node --version` |
+| Git | any recent | |
+| FFmpeg | any recent | `brew install ffmpeg` (macOS) or `sudo apt install ffmpeg` (Linux). Required for audio extraction. |
+| PostgreSQL server binaries | 14 or later | Only to run the backend tests (`brew install postgresql@16`). The app itself uses Supabase. |
+| NVIDIA GPU and CUDA | optional | Detected automatically; speeds up speech recognition. |
+
+You also need accounts and keys that are never stored in the repository: a Supabase project (free tier is enough for
+development) and at least one AI key (for example Groq). Without an AI key the study tools fall back to simple
+rule-based output.
 
 ### 1. Clone the Repository
 
@@ -174,6 +189,10 @@ uvicorn summarizer.main:app --host 127.0.0.1 --port 8000
 In development the API also runs the jobs. In production run workers separately:
 `python -m summarizer.features.jobs.worker`.
 
+The speech-recognition model is **not** in the repository: it downloads automatically the first time a video
+without captions needs it (a few hundred MB for the default `small` model) and is cached in
+`~/.cache/huggingface`, so the download happens once per machine.
+
 ### 4. Frontend Setup
 
 In a second terminal:
@@ -189,7 +208,34 @@ Open <http://localhost:3000>. A visitor can paste a YouTube link and get the sum
 an account (a free try-out of 2 videos per day). Signing in with Google or an emailed link keeps what they made and
 unlocks the library, playlists, study tools, notes, documents and uploads (10 videos per day).
 
-### 5. Run with Docker (optional)
+### Setting up again on a new machine (or after deleting the folder)
+
+Your data lives in your Supabase project, so it survives deleting the local folder. Only these local files are
+ignored by git, and must be recreated:
+
+| File | What to do |
+|---|---|
+| `.env` (project root) | Copy `.env.example` and fill it in, or restore your saved copy. |
+| `frontend/.env.local` | Copy `frontend/.env.example` and fill it in, or restore your saved copy. |
+| `venv/` and `frontend/node_modules/` | Recreated by the install commands above. |
+| `data/` | Local uploads and temporary media. Not needed to start; it is created on demand. |
+
+Keep a private copy of both `.env` files (for example in a password manager): they hold keys that cannot be rebuilt
+from the repository. Never commit them.
+
+### 5. Make yourself an admin (optional)
+
+Sign in to the site once, then give your account the admin role (a dry run is the default; add `--apply` to do it):
+
+```bash
+python3 scripts/grant_staff.py --email you@example.com
+python3 scripts/grant_staff.py --email you@example.com --apply
+```
+
+An **Admin panel** item then appears in your account menu. Further staff are added from the panel. Details:
+[docs/ADMIN_PANEL.md](docs/ADMIN_PANEL.md).
+
+### 6. Run with Docker (optional)
 
 ```bash
 docker compose up --build
@@ -200,7 +246,7 @@ Starts the API, a separate worker and the web app. The database is your Supabase
 For a real server (HTTPS, workers, GPU, CI/CD, monitoring, load tests, cost) see the
 [Deployment guide](docs/DEPLOYMENT.md) and the [Operations runbook](docs/RUNBOOK.md).
 
-### 6. Run the tests
+### 7. Run the tests
 
 Backend (needs the PostgreSQL server binaries installed; the database tests are skipped without them):
 
@@ -243,6 +289,7 @@ Detailed technical documentation and design specifications are available below:
 - [**UI Design System & Architecture Specification**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/docs/UI_DESIGN_SYSTEM.md) — Design guidelines, design tokens, component anatomy, interface structure, and product workflows.
 - [**Deployment guide**](docs/DEPLOYMENT.md) and [**Operations runbook**](docs/RUNBOOK.md) — cloud architecture, release process, what the owner must set up, security checklist, on-call steps.
 - [**Supabase setup**](docs/SUPABASE_SETUP.md) — database, sign-in and storage.
+- [**Admin panel, support and shared study sets**](docs/ADMIN_PANEL.md) — roles, the Contact page, regenerate rules and the audit log.
 - [**Contributing Guide**](https://github.com/RahulDhakad01/multimodal-video-summarizer/blob/main/CONTRIBUTING.md) — Guidelines for contributing to the project.
 
 ---
@@ -288,14 +335,8 @@ Please read the [**Contributing Guide**](https://github.com/RahulDhakad01/multim
 
 **Rahul Dhakad**
 
-- GitHub: (https://github.com/RahulDhakad01)
+- GitHub: [@RahulDhakad01](https://github.com/RahulDhakad01)
 - Project Repository: [Multimodal Video Summarizer](https://github.com/RahulDhakad01/multimodal-video-summarizer)
-
-**Kapil Mewada**
-
-- GitHub: [@kapilmewada74](https://github.com/kapilmewada74)
-
-
 
 ---
 

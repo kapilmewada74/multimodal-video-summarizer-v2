@@ -13,11 +13,16 @@ logger = logging.getLogger("summarizer.push")
 # Subscriptions come from the browser, and the server later connects to the
 # address in them. To stop anyone from pointing the server at an internal
 # address, only the real push services of the major browsers are accepted.
+# Exact services only: a wildcard such as ".googleapis.com" would also allow storage.googleapis.com, where anyone can
+# host a page of their own for the server to call.
 ALLOWED_HOST_SUFFIXES = (
-    ".googleapis.com",       # Chrome, Edge, Opera, Brave (FCM)
-    ".mozilla.com",          # Firefox
-    ".push.apple.com",       # Safari
-    ".windows.com",          # legacy Edge
+    ".push.services.mozilla.com",   # Firefox (updates.push.services.mozilla.com)
+    ".push.apple.com",              # Safari (web.push.apple.com)
+    ".notify.windows.com",          # Edge on Windows (WNS)
+)
+ALLOWED_HOSTS = (
+    "fcm.googleapis.com",           # Chrome, Edge, Opera, Brave (Firebase Cloud Messaging)
+    "android.googleapis.com",       # older Chrome subscriptions (GCM)
 )
 MAX_ENDPOINT_LENGTH = 1000
 
@@ -37,7 +42,7 @@ def is_allowed_endpoint(endpoint: str) -> bool:
     host = (parsed.hostname or "").lower()
     if parsed.scheme != "https" or not host or parsed.username or parsed.password or parsed.port not in (None, 443):
         return False
-    return any(host.endswith(suffix) or host == suffix.lstrip(".") for suffix in ALLOWED_HOST_SUFFIXES)
+    return host in ALLOWED_HOSTS or any(host.endswith(suffix) or host == suffix.lstrip(".") for suffix in ALLOWED_HOST_SUFFIXES)
 
 
 def build_payload(title: str, body: Optional[str], link: Optional[str]) -> str:

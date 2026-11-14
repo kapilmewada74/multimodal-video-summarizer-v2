@@ -17,9 +17,11 @@ $$;
 
 create schema if not exists auth;
 create table auth.users (
-    id           uuid primary key,
-    email        text,
-    is_anonymous boolean not null default false
+    id              uuid primary key,
+    email           text,
+    is_anonymous    boolean not null default false,
+    created_at      timestamptz not null default now(),
+    last_sign_in_at timestamptz
 );
 
 -- Same behaviour as Supabase: reads the user id from the request JWT claims.

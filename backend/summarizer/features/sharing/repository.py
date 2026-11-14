@@ -1,8 +1,6 @@
 import secrets
 from typing import Any, Dict, Optional
 
-import psycopg
-
 Row = Dict[str, Any]
 
 
@@ -19,24 +17,23 @@ def active_link(conn, user_id: str, video_id: str) -> Optional[Row]:
 
 
 def create_or_get_link(conn, user_id: str, video_id: str) -> Row:
-    existing = active_link(conn, user_id, video_id)
-    if existing:
-        return existing
-    # An expired-but-not-revoked link would block the unique index; retire it.
-    conn.execute("update share_links set revoked_at = now() where owner_id = %s and video_id = %s "
-                 "and revoked_at is null", (user_id, video_id))
-    for _ in range(3):
-        try:
-            return conn.execute(
-                "insert into share_links (token, video_id, owner_id) values (%s, %s, %s) returning *",
-                (new_token(), video_id, user_id)).fetchone()
-        except psycopg.errors.UniqueViolation:
-            # Either the (astronomically unlikely) token collided, or a parallel
-            # request created the link first.
-            existing = active_link(conn, user_id, video_id)
-            if existing:
-                return existing
-    raise RuntimeError("Could not create a share link.")
+    """The person's active link for this video, creating it if there is none.
+
+    Two requests at once (a double click, two tabs) must end up with the SAME link. Without a lock one request could
+    retire the link the other had just created, and hand back a token that no longer works. A lock held for this
+    person and video only (released when the transaction ends) makes them take turns; other videos and people are
+    not affected."""
+    with conn.transaction():
+        conn.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"share:{user_id}:{video_id}",))
+        existing = active_link(conn, user_id, video_id)
+        if existing:
+            return existing
+        # Whatever is still unrevoked now has expired, and would block the unique index; retire it.
+        conn.execute("update share_links set revoked_at = now() where owner_id = %s and video_id = %s "
+                     "and revoked_at is null", (user_id, video_id))
+        return conn.execute(
+            "insert into share_links (token, video_id, owner_id) values (%s, %s, %s) returning *",
+            (new_token(), video_id, user_id)).fetchone()
 
 
 def revoke(conn, user_id: str, video_id: str) -> bool:

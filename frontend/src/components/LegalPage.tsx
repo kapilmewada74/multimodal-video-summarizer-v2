@@ -15,6 +15,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
           <nav className="flex gap-4 text-xs font-semibold text-[var(--text-muted)]">
             <Link href="/privacy" className="hover:text-[var(--text-main)]">Privacy</Link>
             <Link href="/terms" className="hover:text-[var(--text-main)]">Terms</Link>
+            <Link href="/contact" className="hover:text-[var(--text-main)]">Contact</Link>
           </nav>
         </div>
       </header>
@@ -25,7 +26,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
           {children}
         </div>
         <p className="mt-12 border-t border-[var(--card-border)] pt-4 text-xs text-[var(--text-muted)]">
-          Questions? {SITE.contactEmail ? <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> : "Use the contact address listed on the site."}
+          Questions? <Link href="/contact" className="underline">Contact us</Link>{SITE.contactEmail && <> or email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a></>}.
         </p>
       </main>
     </div>

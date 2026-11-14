@@ -112,7 +112,7 @@ Replace every assumption with a real number. `GET /api/internal/stats` gives the
 |---|---|---|
 | GitHub environment **secret** | `SUPABASE_ACCESS_TOKEN` | personal access token, for migrations |
 | | `SUPABASE_DB_PASSWORD` | database password of that project |
-| | `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER` | server access for the Deploy workflow |
+| | `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS` | server access for the Deploy workflow. `DEPLOY_KNOWN_HOSTS` is the server's public key: run `ssh-keyscan -H <your server>` once from your own computer and paste the output. The workflow refuses to run without it, so a fake server cannot receive your deploy. |
 | GitHub environment **variable** | `SUPABASE_PROJECT_REF`, `SITE_URL` | `SITE_URL` e.g. `https://app.example.com` |
 | GitHub **variables** (public) | `NEXT_PUBLIC_*` | compiled into the web image |
 | Server `.env.production` | see `.env.production.example` | never in git |

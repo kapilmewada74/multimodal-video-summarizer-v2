@@ -52,6 +52,12 @@ class Api:
                          (f"{guest.id}@example.com", guest.id))
         return User(guest.id, make_token(guest.id, extra={"email": f"{guest.id}@example.com"}))
 
+    def staff(self, role="admin") -> User:
+        """A signed-in account that holds a staff role (admin or sub_admin)."""
+        person = self.user()
+        self.sql("insert into staff_roles (user_id, role) values (%s, %s)", (person.id, role))
+        return person
+
     def sql(self, query, params=()):
         with psycopg.connect(self.db_url, autocommit=True) as conn:
             cur = conn.execute(query, params)

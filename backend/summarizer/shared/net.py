@@ -5,12 +5,19 @@ from fastapi import Request
 
 
 def client_ip(request: Request) -> str:
-    """Caller IP. Behind a trusted proxy the first X-Forwarded-For entry is used
-    only when TRUST_PROXY=1, so a client cannot fake its address otherwise."""
+    """Caller IP. Behind a trusted proxy the address comes from X-Forwarded-For, and only when TRUST_PROXY=1.
+
+    A client can send its own X-Forwarded-For, and many proxies ADD the real address to the END of the list instead of
+    replacing it. So the address is read from the end (the entry the trusted proxy added), never from the start, which
+    the client controls. With more than one trusted proxy in front, set TRUST_PROXY_HOPS to how many there are."""
     if os.getenv("TRUST_PROXY") == "1":
-        forwarded = request.headers.get("x-forwarded-for", "")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        parts = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+        if parts:
+            try:
+                hops = max(1, int(os.getenv("TRUST_PROXY_HOPS", "1")))
+            except ValueError:
+                hops = 1
+            return parts[-hops] if len(parts) >= hops else parts[0]
     return request.client.host if request.client else "unknown"
 
 

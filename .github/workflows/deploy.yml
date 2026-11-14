@@ -52,15 +52,26 @@ jobs:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER_NAME: ${{ secrets.DEPLOY_USER }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           TAG: ${{ inputs.image_tag }}
         run: |
+          # The tag ends up inside a command that runs on the server: allow only what a tag can contain.
+          if ! printf '%s' "$TAG" | grep -Eq '^[A-Za-z0-9._-]{1,128}$'; then
+            echo "Invalid image tag. Use letters, digits, dot, dash or underscore only."; exit 1
+          fi
+          # Trust only the server key we were given. (Scanning the host key during the run would accept anyone answering
+          # at that address.) Get the value once, from a trusted machine:  ssh-keyscan -H your.server
+          if [ -z "$KNOWN_HOSTS" ]; then
+            echo "Set the DEPLOY_KNOWN_HOSTS secret (output of: ssh-keyscan -H <your server>). See docs/DEPLOYMENT.md."; exit 1
+          fi
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/id_deploy "$USER_NAME@$HOST" "mkdir -p /opt/summarizer/deploy"
-          scp -i ~/.ssh/id_deploy docker-compose.prod.yml "$USER_NAME@$HOST:/opt/summarizer/"
-          scp -i ~/.ssh/id_deploy deploy/Caddyfile "$USER_NAME@$HOST:/opt/summarizer/deploy/"
-          ssh -i ~/.ssh/id_deploy "$USER_NAME@$HOST" "cd /opt/summarizer && \
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          SSH_OPTS="-i $HOME/.ssh/id_deploy -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          ssh $SSH_OPTS "$USER_NAME@$HOST" "mkdir -p /opt/summarizer/deploy"
+          scp $SSH_OPTS docker-compose.prod.yml "$USER_NAME@$HOST:/opt/summarizer/"
+          scp $SSH_OPTS deploy/Caddyfile "$USER_NAME@$HOST:/opt/summarizer/deploy/"
+          ssh $SSH_OPTS "$USER_NAME@$HOST" "cd /opt/summarizer && \
             sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/' .env.production && \
             docker compose -f docker-compose.prod.yml --env-file .env.production pull && \
             docker compose -f docker-compose.prod.yml --env-file .env.production up -d --remove-orphans && \

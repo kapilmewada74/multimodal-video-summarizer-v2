@@ -116,6 +116,7 @@ export function Footer() {
         <div className="pt-6 border-t border-[var(--card-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <p>© {new Date().getFullYear()} SUMMARIZE.AI. All rights reserved.</p>
           <div className="flex items-center gap-6 text-[var(--text-muted)]">
+            <a href="/contact" className="hover:text-[var(--text-main)] transition-colors">Contact</a>
             <a href="/privacy" className="hover:text-[var(--text-main)] transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-[var(--text-main)] transition-colors">Terms of Service</a>
           </div>

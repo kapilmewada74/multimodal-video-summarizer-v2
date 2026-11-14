@@ -41,6 +41,7 @@ EXPORT_TABLES = [
     ("notifications", "user_id", ()),
     ("share_links", "owner_id", ("token",)),
     ("generation_usage", "user_id", ()),
+    ("support_tickets", "user_id", ("ip_hash",)),
 ]
 
 

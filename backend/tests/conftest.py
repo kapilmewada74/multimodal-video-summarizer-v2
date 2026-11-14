@@ -46,6 +46,16 @@ def isolated_environment(monkeypatch, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def fresh_rate_limits():
+    """The in-memory rate limit is per process; every test starts with an empty one."""
+    from summarizer.shared import throttle
+    throttle.reset()
+    from summarizer.core import suspension
+    suspension.reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def clear_generation_caches():
     from summarizer.features.flashcards import service as flashcards
     from summarizer.features.quizzes import service as quizzes

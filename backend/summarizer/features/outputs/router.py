@@ -1,9 +1,9 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from ...core.auth import AuthUser, current_actor
+from ...core.auth import AuthUser, current_actor, current_user
 from ...core.db import connection
 from ...core.errors import AppError
 from ..videos import repository as videos_repo
@@ -29,6 +29,7 @@ def open_output(video_id: str, kind: Kind, payload: Optional[OutputRequest] = No
 
     The first request generates it (and counts toward the daily generation
     limit); after that everyone with the video gets the stored copy instantly.
+    `force` makes a new copy for the caller only: the shared one is never replaced.
     """
     payload = payload or OutputRequest()
     with connection() as conn:
@@ -45,3 +46,14 @@ def open_output(video_id: str, kind: Kind, payload: Optional[OutputRequest] = No
     except Exception:
         service.logger.exception("Generating %s failed", kind)
         raise AppError(500, "generation_failed", "Could not generate this. Please try again.")
+
+
+@router.delete("/{video_id}/outputs/{kind}")
+def use_shared_version(video_id: str, kind: Kind, difficulty: Literal["easy", "medium", "hard"] = "medium",
+                       num_questions: int = Query(default=5, ge=1, le=20), user: AuthUser = Depends(current_user)):
+    """Drop the person's own regenerated copy so the shared one shows again."""
+    with connection() as conn:
+        video = videos_repo.user_video(conn, user.id, video_id)
+    if not video:
+        raise AppError(404, "video_not_found", "Video not found.")
+    return {"reset": service.reset_personal(user.id, str(video["id"]), kind, difficulty, num_questions)}

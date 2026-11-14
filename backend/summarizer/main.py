@@ -8,10 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import get_settings
 from .core.db import close_pool
+from .core.bodylimit import install_body_limit
 from .core.errors import install_error_handlers
 from .core.observability import configure_logging, init_error_reporting, install_request_middleware
 from .core.startup_checks import enforce
+from .features.admin.router import router as admin_router
 from .features.documents.router import router as documents_router
+from .features.support.router import router as support_router
 from .features.exports.router import router as exports_router
 from .features.limits.router import router as limits_router
 from .features.ops.router import router as ops_router
@@ -66,11 +69,17 @@ def _database_status(settings) -> str:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    # The interactive API documentation lists every route and field: handy while developing, a free map for an attacker
+    # in production. Off there unless ENABLE_API_DOCS=1.
+    docs_on = (not settings.is_production) or os.getenv("ENABLE_API_DOCS") == "1"
     app = FastAPI(
         title="Multimodal Video Summarizer",
         description="AI video summarizer: transcript, summary, flashcards, slides and quiz.",
         version="1.1.0",
         lifespan=lifespan,
+        docs_url="/docs" if docs_on else None,
+        redoc_url="/redoc" if docs_on else None,
+        openapi_url="/openapi.json" if docs_on else None,
     )
     app.add_middleware(
         CORSMiddleware,
@@ -80,12 +89,13 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
     install_error_handlers(app)
+    install_body_limit(app)
     install_request_middleware(app, settings.is_production)
 
     for router in (videos_router, library_router, outputs_router, sharing_router, exports_router,
                    public_router, limits_router, slides_router, study_router, notes_router, edits_router,
                    playlists_router, notifications_router, documents_router, uploads_router,
-                   ops_router, account_router):
+                   ops_router, account_router, support_router, admin_router):
         app.include_router(router)
 
     @app.get("/")

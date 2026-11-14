@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Gauge, ListVideo, LogIn, LogOut, Settings, TrendingUp } from "lucide-react";
+import { BookOpen, Gauge, ListVideo, LogIn, LogOut, Settings, ShieldCheck, TrendingUp } from "lucide-react";
 import { ActionMenu } from "../../components/ui/ActionMenu";
 import { useAuth } from "./AuthProvider";
 import type { Profile } from "./session";
+import { useStaff } from "../admin/useStaff";
 
 /** The person's picture (from Google) or the first letter of their name or email. */
 export function Avatar({ profile, size = 32 }: { profile: Profile; size?: number }) {
@@ -23,6 +24,7 @@ export function Avatar({ profile, size = 32 }: { profile: Profile; size?: number
 export function AccountMenu({ variant = "bar" }: { variant?: "bar" | "menu" }) {
   const { ready, configured, signedIn, profile, signOut } = useAuth();
   const router = useRouter();
+  const staff = useStaff();
   if (!configured || !ready) return null;
 
   if (!signedIn) {
@@ -64,6 +66,9 @@ export function AccountMenu({ variant = "bar" }: { variant?: "bar" | "menu" }) {
         { key: "study", label: "Study and goals", icon: <TrendingUp className="h-4 w-4" />, onSelect: () => router.push("/study") },
         { key: "account", label: "About and Usage", icon: <Gauge className="h-4 w-4" />, onSelect: () => router.push("/account") },
         { key: "settings", label: "Notification settings", icon: <Settings className="h-4 w-4" />, onSelect: () => router.push("/settings") },
+        ...(staff.isStaff
+          ? [{ key: "admin", label: "Admin panel", icon: <ShieldCheck className="h-4 w-4" />, onSelect: () => router.push("/admin"), separated: true }]
+          : []),
         { key: "out", label: "Sign out", icon: <LogOut className="h-4 w-4" />, onSelect: () => void signOut(), separated: true },
       ]}
     />

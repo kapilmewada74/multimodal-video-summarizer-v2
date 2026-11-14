@@ -100,12 +100,40 @@ def download_video(url: str, job_id: str) -> Path:
     raise FileNotFoundError("The downloaded video could not be located.")
 
 
+class UnsupportedMedia(ValueError):
+    """The file is not one of the audio/video containers we accept (whatever its name says)."""
+
+
+# ffprobe names a container with a comma-separated list, for example "mov,mp4,m4a,3gp,3g2,mj2" or "matroska,webm".
+_ALLOWED_CONTAINERS = {"mov", "mp4", "m4a", "3gp", "3g2", "mj2", "matroska", "webm", "avi", "mp3", "wav"}
+PROBE_TIMEOUT_SECONDS = 30
+
+
+def check_media_container(input_file: Path) -> None:
+    """Refuse anything that is not really a plain audio/video file.
+
+    The file name is chosen by the uploader, and ffmpeg decides what a file is from its CONTENT. A crafted playlist
+    named "talk.mp4" can make ffmpeg open other local files or web addresses (reading the server's files, or calling
+    internal services). So the container is checked first, and ffmpeg is also told it may only open local files."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-protocol_whitelist", "file", "-print_format", "default=noprint_wrappers=1:nokey=1",
+             "-show_entries", "format=format_name", "-i", str(input_file)],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=PROBE_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        raise UnsupportedMedia("The file could not be read in time.")
+    names = {name.strip() for name in (result.stdout or "").strip().split(",") if name.strip()}
+    if result.returncode != 0 or not names or not names <= _ALLOWED_CONTAINERS:
+        raise UnsupportedMedia("This is not a supported audio or video file.")
+
+
 def extract_audio(input_file: Path, job_id: str) -> Path:
     """Convert any media file to 16 kHz mono WAV for speech recognition."""
+    check_media_container(input_file)
     _, audio_dir = media_dirs()
     output = audio_dir / f"audio_{job_id}.wav"
     result = subprocess.run(
-        ["ffmpeg", "-y", "-i", str(input_file), "-vn", "-acodec", "pcm_s16le",
+        ["ffmpeg", "-y", "-nostdin", "-protocol_whitelist", "file", "-i", str(input_file), "-vn", "-acodec", "pcm_s16le",
          "-ar", "16000", "-ac", "1", str(output)],
         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
         timeout=FFMPEG_TIMEOUT_SECONDS,

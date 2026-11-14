@@ -65,6 +65,19 @@ def put_user_output(conn, user_id: str, video_id: str, kind: str, variant: str, 
     return content
 
 
+def delete_user_output(conn, user_id: str, video_id: str, kind: str, variant: str) -> bool:
+    return conn.execute("delete from user_outputs where user_id = %s and video_id = %s and kind = %s and variant = %s",
+                        (user_id, video_id, kind, variant)).rowcount > 0
+
+
+def delete_shared_outputs(conn, video_id: str, kind: str, variant: Optional[str] = None) -> int:
+    """Staff only: remove the shared copy (one variant, or all of them for the kind). The next opener regenerates it."""
+    if variant is None:
+        return conn.execute("delete from video_outputs where video_id = %s and kind = %s", (video_id, kind)).rowcount
+    return conn.execute("delete from video_outputs where video_id = %s and kind = %s and variant = %s",
+                        (video_id, kind, variant)).rowcount
+
+
 def document_texts(conn, user_id: str, video_id: str) -> List[Row]:
     """The user's own documents attached to this video that have readable text, oldest first."""
     return conn.execute(

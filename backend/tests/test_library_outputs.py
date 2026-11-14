@@ -150,14 +150,16 @@ def test_quiz_variants_are_stored_separately(api, tmp_path, fake_ai):
     assert api.sql("select count(*) from video_outputs where kind = 'quiz'")[0][0] == 2
 
 
-def test_force_regenerates_replaces_and_counts(api, tmp_path, fake_ai):
+def test_force_makes_a_personal_copy_and_never_touches_the_shared_one(api, tmp_path, fake_ai):
     user = api.user()
     video = ready_video(api, user, tmp_path)
     open_output(api, user, video, "mindmap")
-    assert open_output(api, user, video, "mindmap", force=True).status_code == 200
+    again = open_output(api, user, video, "mindmap", force=True)
+    assert again.status_code == 200 and again.json()["personal"] is True
     assert len(fake_ai) == 2
-    assert api.sql("select count from generation_usage")[0][0] == 2
-    assert api.sql("select count(*) from video_outputs")[0][0] == 1
+    assert api.sql("select count from generation_usage")[0][0] == 2   # regenerating costs a generation
+    assert api.sql("select count(*) from video_outputs")[0][0] == 1   # the shared copy is still the only one
+    assert api.sql("select count(*) from user_outputs")[0][0] == 1    # the new one belongs to the person
 
 
 def test_invalid_requests(api, tmp_path, fake_ai):
