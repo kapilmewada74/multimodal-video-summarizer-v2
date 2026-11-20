@@ -32,7 +32,7 @@ jobs:
     environment: ${{ inputs.environment }}   # GitHub environments hold the per-environment secrets (and can require approval)
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Apply database migrations
         if: inputs.run_migrations
