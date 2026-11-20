@@ -1,7 +1,7 @@
 # Worker image for a machine with an NVIDIA GPU (Whisper on CUDA).
 # faster-whisper 1.2 needs CUDA 12 and cuDNN 9; the runtime image below provides both.
 # The host needs the NVIDIA driver and the NVIDIA Container Toolkit; run with `--gpus all`.
-FROM nvidia/cuda:12.6.2-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:13.5.0-cudnn-runtime-ubuntu24.04
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
