@@ -25,7 +25,7 @@ jobs:
           - { name: gpu-worker, context: ., file: Dockerfile.gpu }
           - { name: web, context: frontend, file: frontend/Dockerfile }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: docker/setup-buildx-action@v3
