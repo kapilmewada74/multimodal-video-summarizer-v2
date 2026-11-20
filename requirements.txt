@@ -10,7 +10,7 @@ pydantic==2.14.2
 # Database (Supabase Postgres) and sign-in token verification
 psycopg[binary]==3.3.8
 psycopg-pool==3.3.3
-PyJWT[crypto]==2.8.0
+PyJWT[crypto]==2.15.1
 
 # Audio processing & transcription
 yt-dlp==2026.8.19
