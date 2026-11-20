@@ -39,7 +39,7 @@ jobs:
           sha="${{ github.event.workflow_run.head_sha || github.sha }}"
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.name }}" >> "$GITHUB_OUTPUT"
           echo "short=${sha::12}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
