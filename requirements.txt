@@ -8,7 +8,7 @@ python-multipart==0.0.32
 pydantic==2.14.2
 
 # Database (Supabase Postgres) and sign-in token verification
-psycopg[binary]==3.3.8
+psycopg[binary]==3.3.9
 psycopg-pool==3.3.3
 PyJWT[crypto]==2.8.0
 
